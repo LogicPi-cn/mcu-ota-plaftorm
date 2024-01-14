@@ -1,14 +1,14 @@
 version: '3.8'
 services:
   ota-file-server:
-    image: reg.21up.cn/iot/ota-file-server:0.1.0
+    image: logicpi/ota-file-server:0.1.1
     container_name: ota-file-server
     ports:
       - 20000:20000
     volumes:
       - /home/craftor/ftp:/app/ftp
   mcu-ota-server:
-    image: reg.21up.cn/iot/mcu-ota-server:0.1.8
+    image: logicpi/mcu-ota-server:0.1.8
     container_name: mcu-ota-server
     ports:
       - 9999:9999
@@ -16,4 +16,3 @@ services:
       - FW_SERVER=http://ota-file-server:20000
     depends_on:
       - ota-file-server
-

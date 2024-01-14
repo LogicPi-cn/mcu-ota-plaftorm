@@ -16,7 +16,6 @@ WORKDIR /app
 
 # 将 Cargo.lock 和 Cargo.toml 复制到工作目录中
 COPY Cargo.toml ./
-COPY Cargo.lock ./
 
 # 为了利用Docker的缓存特性，先创建一个空的main.rs文件并进行编译，避免后续依赖下载耗时
 RUN mkdir src && \
@@ -40,7 +39,6 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 # 安装必要的依赖
 RUN apt-get update && \
-    apt-get install -y ca-certificates tzdata libpq5 openssl perl build-essential libssl-dev && \
     rm -rf /var/lib/apt/lists/*
 
 # 创建一个新的工作目录
