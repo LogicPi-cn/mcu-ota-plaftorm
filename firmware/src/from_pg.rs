@@ -1,8 +1,10 @@
 use crate::common::{FirmwareData, FirmwareInfo};
 
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use log::debug;
 use sqlx::{Pool, Postgres, Row};
 
+#[derive(Clone)]
 pub struct Database {
     pub db: Pool<Postgres>,
 }
@@ -65,7 +67,7 @@ async fn create_firmware(
     db: web::Data<Database>,
     firmware_data: web::Json<FirmwareData>,
 ) -> impl Responder {
-    let result = db.create_firmware_data(&firmware_data.0).await;
+    let result = db.create_firmware_data(&firmware_data).await;
     match result {
         Ok(_) => HttpResponse::Created().finish(),
         Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
@@ -76,7 +78,10 @@ async fn create_firmware(
 async fn read_firmware(db: web::Data<Database>, id: web::Path<i32>) -> impl Responder {
     let result = db.read_firmware_data(*id).await;
     match result {
-        Ok(firmware_data) => HttpResponse::Ok().json(firmware_data),
+        Ok(firmware_data) => {
+            debug!("{}", firmware_data.info);
+            HttpResponse::Ok().json(firmware_data)
+        }
         Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     }
 }

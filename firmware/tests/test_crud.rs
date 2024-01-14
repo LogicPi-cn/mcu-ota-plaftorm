@@ -3,12 +3,12 @@ mod tests {
 
     use std::env;
 
-    use actix_web::{test, App};
+    use actix_web::{test, web, App};
     use firmware::{
         common::{FirmwareData, FirmwareInfo, FirmwareVersion},
         from_pg::{read_firmware, Database},
     };
-    use log::{error, info};
+    use log::{debug, error, info};
     use sqlx::postgres::PgPoolOptions;
 
     #[actix_rt::test]
@@ -47,7 +47,12 @@ mod tests {
         new_db.create_firmware_data(&test_data).await.unwrap();
 
         // 创建应用并注册路由
-        let mut app = test::init_service(App::new().app_data(new_db).service(read_firmware)).await;
+        let mut app = test::init_service(
+            App::new()
+                .app_data(web::Data::new(new_db.clone()))
+                .service(read_firmware),
+        )
+        .await;
 
         // 创建一个测试请求
         let req = test::TestRequest::get().uri("/firmware/4").to_request();
@@ -60,6 +65,9 @@ mod tests {
 
         // 检查响应内容
         let result: FirmwareData = test::read_body_json(resp).await;
+
+        debug!("{}", result.info);
+
         assert_eq!(result, test_data);
     }
 }
