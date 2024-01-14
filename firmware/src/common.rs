@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 /// 固件版本结构体
-#[derive(Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Deserialize, Serialize, Debug)]
 pub struct FirmwareVersion {
     pub m: u8,
     pub n: u8,
@@ -10,7 +10,7 @@ pub struct FirmwareVersion {
 }
 
 /// 固件信息
-#[derive(Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Deserialize, Serialize, Debug)]
 pub struct FirmwareInfo {
     pub code: u16,
     pub version: FirmwareVersion,
@@ -19,7 +19,7 @@ pub struct FirmwareInfo {
 }
 
 /// 固件数据
-#[derive(Clone, PartialEq, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, Deserialize, Serialize, Debug)]
 pub struct FirmwareData {
     pub info: FirmwareInfo, // 固件信息
     pub data: Vec<u8>,      // 固件数据

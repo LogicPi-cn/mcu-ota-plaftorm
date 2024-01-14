@@ -1,5 +1,5 @@
 use actix_files::Files;
-use actix_web::{web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{middleware, web, App, HttpResponse, HttpServer, Responder};
 use clap::Parser;
 use firmware::{
     common::FirmwareInfo,
@@ -42,8 +42,8 @@ async fn main() -> std::io::Result<()> {
     println!("OTA File Server, Version: {}", version);
 
     // set log level
-    env::set_var("RUST_APP_LOG", "debug");
-    pretty_env_logger::init_custom_env("RUST_APP_LOG");
+    env::set_var("RUST_LOG", "debug,actix_web=debug");
+    pretty_env_logger::init_custom_env("RUST_LOG");
 
     let _fw_path = env::var("FW_PATH").unwrap_or_else(|_| cli.fw_path.clone());
     let _fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone());
@@ -51,7 +51,7 @@ async fn main() -> std::io::Result<()> {
 
     let pool = match PgPoolOptions::new().connect(&_fw_db).await {
         Ok(pool) => {
-            error!("✅Connection to the database is successful!");
+            info!("✅Connection to the database is successful!");
             pool
         }
         Err(err) => {
