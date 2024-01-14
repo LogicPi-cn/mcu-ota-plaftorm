@@ -50,10 +50,7 @@ RUN mkdir -p /app/ftp
 # 复制编译后的应用程序到新的工作目录
 COPY --from=builder /app/target/release/ota-file-server .
 
-ENV FW_PATH=/app/ftp
-ENV PORT=20000
-
 EXPOSE 20000/tcp
 
 # 在容器中运行项目
-CMD ["./ota-file-server"]
+CMD ["./ota-file-server", "--fw-path", "/app/ftp", "--port", "20000"]
