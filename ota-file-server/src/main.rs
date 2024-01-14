@@ -4,6 +4,7 @@ use clap::Parser;
 use firmware::{common::FirmwareInfo, from_disk::list_all_fw};
 use log::info;
 use ota_file_server::args::Cli;
+use sqlx::{Pool, Postgres};
 use std::{env, io};
 
 /// LogicPi Logo
@@ -41,7 +42,10 @@ async fn main() -> std::io::Result<()> {
     pretty_env_logger::init_custom_env("RUST_APP_LOG");
 
     let _fw_path = env::var("FW_PATH").unwrap_or_else(|_| cli.fw_path.clone());
+    let _fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_path.clone());
     let _port = env::var("PORT").unwrap_or_else(|_| (cli.port as u32).to_string());
+
+    let pool: Pool<Postgres> = sqlx::Pool::connect(&_fw_db).await.unwrap();
 
     // Create a listener
     let server = format!("0.0.0.0:{}", _port);
