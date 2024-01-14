@@ -1,9 +1,10 @@
 use std::error::Error;
 
 use crc::{Crc, CRC_8_MAXIM_DOW};
+use firmware::common::FirmwareInfo;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
-use crate::{firmware::common::FirmwareInfo, PKG_RX_FW_DATA, PKG_RX_FW_END, PKG_RX_FW_INFO};
+use crate::{PKG_RX_FW_DATA, PKG_RX_FW_END, PKG_RX_FW_INFO};
 
 // 发送固件信息
 pub async fn send_fw_query_info_pkg(

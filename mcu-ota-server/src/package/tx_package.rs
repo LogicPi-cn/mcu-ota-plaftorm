@@ -1,8 +1,9 @@
 use crc::{Crc, CRC_8_MAXIM_DOW};
+use firmware::common::FirmwareInfo;
 use std::error::Error;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
-use crate::{firmware::common::FirmwareInfo, PKG_TX_FW_DATA, PKG_TX_FW_END, PKG_TX_FW_INFO};
+use crate::{PKG_TX_FW_DATA, PKG_TX_FW_END, PKG_TX_FW_INFO};
 
 // 发送失败数据包
 pub async fn send_failed_package(

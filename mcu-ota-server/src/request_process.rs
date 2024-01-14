@@ -2,10 +2,11 @@ use log::{debug, error, info};
 use std::{error::Error, sync::Arc};
 use tokio::{io::AsyncReadExt, net::TcpStream, sync::Mutex};
 
+use firmware::common::{
+    find_firmware, find_latest_fw, slice_fw_data_from_vector, FirmwareData, FirmwareVersion,
+};
+
 use crate::{
-    firmware::common::{
-        find_firmware, find_latest_fw, slice_fw_data_from_vector, FirmwareData, FirmwareVersion,
-    },
     package::{common::package_check, tx_package::*},
     PKG_FAILED_CRC, PKG_FAILED_FW_READ_ERROR, PKG_FAILED_LEN, PKG_FAILED_NO_FW_FOUND,
     PKG_RX_FW_DATA, PKG_RX_FW_END, PKG_RX_FW_INFO,

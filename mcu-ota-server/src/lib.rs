@@ -1,5 +1,4 @@
 pub mod args;
-pub mod firmware;
 pub mod package;
 pub mod request_process;
 
