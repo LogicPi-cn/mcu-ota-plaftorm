@@ -1,8 +1,10 @@
 use crate::common::{FirmwareData, FirmwareInfo};
 
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
+use sqlx::{Pool, Postgres};
+
 pub struct Database {
-    pub pool: sqlx::Pool<sqlx::Postgres>,
+    pub db: Pool<Postgres>,
 }
 
 impl Database {
@@ -18,7 +20,7 @@ impl Database {
             serde_json::to_string(&firmware_data.info).unwrap(),
             firmware_data.data
         )
-        .execute(&self.pool)
+        .execute(&self.db)
         .await?;
 
         Ok(())
@@ -33,7 +35,7 @@ impl Database {
             "#,
             id
         )
-        .fetch_one(&self.pool)
+        .fetch_one(&self.db)
         .await?;
 
         let info: FirmwareInfo = serde_json::from_str(&row.info).unwrap();
@@ -57,7 +59,7 @@ impl Database {
             firmware_data.data,
             id
         )
-        .execute(&self.pool)
+        .execute(&self.db)
         .await?;
 
         Ok(())
@@ -71,7 +73,7 @@ impl Database {
             "#,
             id
         )
-        .execute(&self.pool)
+        .execute(&self.db)
         .await?;
 
         Ok(())

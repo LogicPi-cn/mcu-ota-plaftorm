@@ -1,10 +1,14 @@
 use actix_files::Files;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use clap::Parser;
-use firmware::{common::FirmwareInfo, from_disk::list_all_fw};
-use log::info;
+use firmware::{
+    common::FirmwareInfo,
+    from_disk::list_all_fw,
+    from_pg::{create_firmware, delete_firmware, read_firmware, update_firmware, Database},
+};
+use log::{error, info};
 use ota_file_server::args::Cli;
-use sqlx::{Pool, Postgres};
+use sqlx::postgres::PgPoolOptions;
 use std::{env, io};
 
 /// LogicPi Logo
@@ -42,10 +46,19 @@ async fn main() -> std::io::Result<()> {
     pretty_env_logger::init_custom_env("RUST_APP_LOG");
 
     let _fw_path = env::var("FW_PATH").unwrap_or_else(|_| cli.fw_path.clone());
-    let _fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_path.clone());
+    let _fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone());
     let _port = env::var("PORT").unwrap_or_else(|_| (cli.port as u32).to_string());
 
-    let pool: Pool<Postgres> = sqlx::Pool::connect(&_fw_db).await.unwrap();
+    let pool = match PgPoolOptions::new().connect(&_fw_db).await {
+        Ok(pool) => {
+            error!("✅Connection to the database is successful!");
+            pool
+        }
+        Err(err) => {
+            error!("🔥 Failed to connect to the database: {:?}", err);
+            std::process::exit(1);
+        }
+    };
 
     // Create a listener
     let server = format!("0.0.0.0:{}", _port);
@@ -57,6 +70,11 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(index))
             .route("/list", web::get().to(list_files))
             .service(Files::new("/download", format!("{}", _fw_path)))
+            .app_data(web::Data::new(Database { db: pool.clone() }))
+            .service(create_firmware)
+            .service(read_firmware)
+            .service(update_firmware)
+            .service(delete_firmware)
     })
     .bind(server)?
     .run()
