@@ -1,13 +1,10 @@
-use clap::Parser;
 use log::{debug, error};
 use reqwest::Error;
-use std::{env, sync::Arc};
+use std::sync::Arc;
 use tokio::{
     sync::Mutex,
     time::{self, Duration},
 };
-
-use crate::args::Cli;
 
 use super::common::{FirmwareData, FirmwareInfo};
 
@@ -65,11 +62,7 @@ pub async fn http_get_all_fw_data(fw_server: &str) -> Result<Vec<FirmwareData>, 
 /// - fw_server   : 服务器地址
 /// - min         : 刷新周期，以分钟为单位
 /// - fw_data_all : 原子变量，存放所有固件数据
-pub async fn refresh_firmware_data(fw_data_all: Arc<Mutex<Vec<FirmwareData>>>) {
-    let cli = Cli::parse();
-
-    let fw_server = env::var("FW_SERVER").unwrap_or_else(|_| cli.clone().fw_server);
-
+pub async fn refresh_firmware_data(fw_server: &str, fw_data_all: Arc<Mutex<Vec<FirmwareData>>>) {
     // 刷新周期
     let refresh_duration = Duration::from_secs(1 * 60);
 

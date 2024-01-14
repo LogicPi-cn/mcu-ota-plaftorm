@@ -1,4 +1,4 @@
 
 [workspace]
 resolver = "2"
-members = ["mcu-ota-server", "ota-file-server"]
+members = ["mcu-ota-server", "ota-file-server", "firmware"]
