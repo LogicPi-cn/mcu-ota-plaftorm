@@ -1,0 +1,20 @@
+pipeline {
+    agent  any
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', credentialsId: 'git-logicpi-cn', url: 'https://git.logicpi.cn/rust/mcu-ota-server.git'
+            }
+        }
+        // stage('Build & Push') {
+        //     steps {
+        //        sh label:'build & push', script: '/bin/bash build-image.sh' 
+        //     }
+        // }
+        // stage('Deploy') {
+        //     steps {
+        //        sh label:'deploy image to k8s', script: '/bin/bash deploy-k3s.sh' 
+        //     }
+        // }
+    }
+}

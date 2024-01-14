@@ -1,0 +1,63 @@
+# 使用 Rust 官方 Docker 镜像作为基础镜像
+FROM rust:latest as builder
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+
+# 国内源
+RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debian.sources
+
+# 替换默认的 Debian 软件源
+RUN apt-get update && \
+    apt-get install -y cmake openssl build-essential libssl-dev perl
+
+# 在容器中创建一个工作目录
+WORKDIR /app
+
+# 将 Cargo.lock 和 Cargo.toml 复制到工作目录中
+COPY Cargo.toml ./
+COPY Cargo.lock ./
+
+# 为了利用Docker的缓存特性，先创建一个空的main.rs文件并进行编译，避免后续依赖下载耗时
+RUN mkdir src && \
+    echo 'fn main() {println!("Dummy main.rs");}' > src/main.rs && \
+    cargo build --release && \
+    rm -rf src/
+
+# 复制项目源代码到工作目录
+COPY . ./
+
+# 使用 Cargo 构建项目
+RUN cargo build --release 
+
+# 使用一个新的基础镜像，减小打包后的镜像大小
+FROM ubuntu:22.04
+
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+
+RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+# 安装必要的依赖
+RUN apt-get update && \
+    apt-get install -y ca-certificates tzdata libpq5 openssl perl build-essential libssl-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# 创建一个新的工作目录
+WORKDIR /app
+RUN mkdir -p /app/ftp
+
+# 环境变量
+
+# 复制编译后的应用程序到新的工作目录
+COPY --from=builder /app/target/release/mcu-ota-server .
+COPY --from=builder /app/Rocket.toml .
+
+ENV FW_PATH=/app/ftp
+ENV FW_SERVER=http://127.0.0.1:20000
+ENV PORT=9999
+
+EXPOSE 9999/tcp
+
+# 在容器中运行项目
+CMD ["./mcu-ota-server"]

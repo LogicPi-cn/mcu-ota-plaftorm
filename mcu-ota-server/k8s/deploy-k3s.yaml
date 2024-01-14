@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mcu-ota-server
+  namespace: iot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mcu-ota-server
+  template:
+    metadata:
+      labels:
+        app: mcu-ota-server
+    spec:
+      nodeName: ota-server
+      containers:
+      - name: mcu-ota-server
+        image: reg.21up.cn/iot/mcu-ota-server:0.1.7
+        ports:
+        - containerPort: 9999
+        volumeMounts:
+        - name: ftp-volume
+          mountPath: /app/ftp
+      volumes:
+      - name: ftp-volume
+        hostPath:
+          path: /home/logicpi/ftp/fw
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mcu-ota-server
+spec:
+  selector:
+    app: mcu-ota-server
+  ports:
+  - protocol: TCP
+    port: 9999
+    targetPort: 9999
+  type: NodePort
