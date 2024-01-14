@@ -1,5 +1,5 @@
 use actix_files::Files;
-use actix_web::{middleware, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use clap::Parser;
 use firmware::{
     common::FirmwareInfo,

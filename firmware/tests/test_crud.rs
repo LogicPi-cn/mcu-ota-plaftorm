@@ -50,7 +50,7 @@ mod tests {
         let mut app = test::init_service(App::new().app_data(new_db).service(read_firmware)).await;
 
         // 创建一个测试请求
-        let req = test::TestRequest::get().uri("/firmware/1").to_request();
+        let req = test::TestRequest::get().uri("/firmware/4").to_request();
 
         // 发送请求并获取响应
         let resp = test::call_service(&mut app, req).await;
