@@ -1,7 +1,7 @@
 use crate::common::{FirmwareData, FirmwareInfo};
 
 use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use sqlx::{Pool, Postgres};
+use sqlx::{Pool, Postgres, Row};
 
 pub struct Database {
     pub db: Pool<Postgres>,
@@ -12,34 +12,25 @@ impl Database {
         &self,
         firmware_data: &FirmwareData,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"
-            INSERT INTO firmware_data (info, data)
-            VALUES ($1, $2)
-            "#,
-            serde_json::to_string(&firmware_data.info).unwrap(),
-            firmware_data.data
-        )
-        .execute(&self.db)
-        .await?;
+        sqlx::query("INSERT INTO firmware_data (info, data) VALUES ($1, $2)")
+            .bind(serde_json::to_string(&firmware_data.info).unwrap())
+            .bind(&firmware_data.data)
+            .execute(&self.db)
+            .await?;
 
         Ok(())
     }
 
     pub async fn read_firmware_data(&self, id: i32) -> Result<FirmwareData, sqlx::Error> {
-        let row = sqlx::query!(
-            r#"
-            SELECT info, data
-            FROM firmware_data
-            WHERE id = $1
-            "#,
-            id
-        )
-        .fetch_one(&self.db)
-        .await?;
+        let row = sqlx::query("SELECT info, data FROM firmware_data WHERE id = $1")
+            .bind(id)
+            .fetch_one(&self.db)
+            .await?;
 
-        let info: FirmwareInfo = serde_json::from_str(&row.info).unwrap();
-        let data = row.data;
+        let info: String = row.get("info");
+        let data: Vec<u8> = row.get("data");
+
+        let info: FirmwareInfo = serde_json::from_str(&info).unwrap();
 
         Ok(FirmwareData { info, data })
     }
@@ -49,32 +40,21 @@ impl Database {
         id: i32,
         firmware_data: &FirmwareData,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"
-            UPDATE firmware_data
-            SET info = $1, data = $2
-            WHERE id = $3
-            "#,
-            serde_json::to_string(&firmware_data.info).unwrap(),
-            firmware_data.data,
-            id
-        )
-        .execute(&self.db)
-        .await?;
+        sqlx::query("UPDATE firmware_data SET info = $1, data = $2 WHERE id = $3")
+            .bind(serde_json::to_string(&firmware_data.info).unwrap())
+            .bind(&firmware_data.data)
+            .bind(id)
+            .execute(&self.db)
+            .await?;
 
         Ok(())
     }
 
     pub async fn delete_firmware_data(&self, id: i32) -> Result<(), sqlx::Error> {
-        sqlx::query!(
-            r#"
-            DELETE FROM firmware_data
-            WHERE id = $1
-            "#,
-            id
-        )
-        .execute(&self.db)
-        .await?;
+        sqlx::query("DELETE FROM firmware_data WHERE id = $1")
+            .bind(id)
+            .execute(&self.db)
+            .await?;
 
         Ok(())
     }
