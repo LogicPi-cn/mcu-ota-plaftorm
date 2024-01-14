@@ -19,6 +19,7 @@ for dir in $(find . -maxdepth 1 -type d ! -name ".*" ! -name "target" -print); d
 
         # 打包并上传
         docker buildx build \
+                -f Dockerfile.$app_name \
                 --tag logicpi/$app_name:$app_version .\
                 --platform linux/amd64 \
                 --push

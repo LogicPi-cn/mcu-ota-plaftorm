@@ -61,34 +61,3 @@ EXPOSE 9999/tcp
 
 # 在容器中运行项目
 CMD ["./mcu-ota-server"]
-
-###########################################
-#            ota-file-server              #
-###########################################
-FROM ubuntu:22.04
-
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
-
-RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-
-# 安装必要的依赖
-RUN apt-get update && \
-    rm -rf /var/lib/apt/lists/*
-
-# 创建一个新的工作目录
-WORKDIR /app
-RUN mkdir -p /app/ftp
-
-# 环境变量
-
-# 复制编译后的应用程序到新的工作目录
-COPY --from=builder /app/target/release/ota-file-server .
-
-ENV FW_PATH=/app/ftp
-ENV PORT=20000
-
-EXPOSE 20000/tcp
-
-# 在容器中运行项目
-CMD ["./ota-file-server"]
