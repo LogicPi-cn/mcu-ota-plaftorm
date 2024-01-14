@@ -1,11 +1,9 @@
 use actix_files::Files;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use clap::Parser;
+use firmware::{common::FirmwareInfo, from_disk::list_all_fw};
 use log::info;
-use ota_file_server::{
-    args::Cli,
-    firmware::{common::FirmwareInfo, from_disk::list_all_fw},
-};
+use ota_file_server::args::Cli;
 use std::{env, io};
 
 /// LogicPi Logo
