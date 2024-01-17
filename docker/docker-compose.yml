@@ -9,6 +9,8 @@ services:
       - FW_DB=postgres://craftor:3.1415926@mcu-ota-pg:50000/firmware
     volumes:
       - /home/craftor/ftp:/app/ftp
+    depends_on:
+      - pg
 
   mcu-ota-server:
     image: logicpi/mcu-ota-server:0.1.9
@@ -19,9 +21,9 @@ services:
       - FW_SERVER=http://ota-file-server:20000
     depends_on:
       - ota-file-server
-      - postgres
+      - pg 
 
-  postgres:
+  pg:
     image: postgres:latest
     container_name: mcu-ota-pg
     ports:
