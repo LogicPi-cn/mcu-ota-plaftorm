@@ -16,7 +16,7 @@ impl Database {
     ) -> Result<(), sqlx::Error> {
         sqlx::query("INSERT INTO firmware_data (info, data) VALUES ($1, $2)")
             .bind(serde_json::to_string(&firmware_data.info).unwrap())
-            .bind(&firmware_data.data)
+            .bind(serde_json::to_string(&firmware_data.data).unwrap())
             .execute(&self.db)
             .await?;
 
