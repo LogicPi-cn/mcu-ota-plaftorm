@@ -6,7 +6,7 @@ services:
     ports:
       - 20000:20000
     environment:
-      - FW_DB=postgres://craftor:3.1415926@mcu-ota-pg:50000/firmware
+      - FW_DB=postgres://craftor:3.1415926@pg:5432/firmware
     volumes:
       - /home/craftor/ftp:/app/ftp
     depends_on:
@@ -26,8 +26,6 @@ services:
   pg:
     image: postgres:latest
     container_name: mcu-ota-pg
-    ports:
-      - 50000:5432
     environment:
       - POSTGRES_USER=craftor
       - POSTGRES_PASSWORD=3.1415926
