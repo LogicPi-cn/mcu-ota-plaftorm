@@ -8,7 +8,7 @@ services:
     environment:
       - FW_DB=postgres://craftor:3.1415926@pg:5432/firmware
     volumes:
-      - /home/craftor/ftp:/app/ftp
+      - /home/craftor/ftp/fw:/app/ftp
     depends_on:
       - pg
 
