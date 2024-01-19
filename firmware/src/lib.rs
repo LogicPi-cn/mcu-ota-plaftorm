@@ -1,4 +1,17 @@
-pub mod common;
-pub mod from_disk;
-pub mod from_http;
-pub mod from_pg;
+use config::Config;
+use diesel::prelude::*;
+use diesel::r2d2::{self, ConnectionManager};
+use sqlx::{Pool, Postgres};
+
+pub mod config;
+pub mod controls;
+pub mod models;
+pub mod schema;
+
+pub type DbError = Box<dyn std::error::Error + Send + Sync>;
+pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
+
+pub struct AppState {
+    pub db: Pool<Postgres>,
+    pub env: Config,
+}
