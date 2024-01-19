@@ -1,4 +1,3 @@
-use chrono::{NaiveDateTime, Utc};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -24,16 +23,6 @@ pub struct FirmwareInfo {
 pub struct FirmwareData {
     pub info: FirmwareInfo, // 固件信息
     pub data: Vec<u8>,      // 固件数据
-}
-
-/// 升级历史数据
-#[derive(Clone, PartialEq, Deserialize, Serialize, Debug)]
-pub struct UpgradeHistory {
-    pub sn: String,
-    pub device_id: String,
-    pub version_num: String,
-    pub success: bool,
-    pub ts: NaiveDateTime,
 }
 
 /// 文件名
