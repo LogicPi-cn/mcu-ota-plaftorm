@@ -23,7 +23,7 @@ mod tests {
         };
 
         _test_endpoints::<UpgradeHistory, NewUpgradeHistory, UpdateUpgradeHistory, _, _, _, _, _>(
-            "/firmware",
+            "/history",
             pool.clone(),
             NewUpgradeHistory::random,
             UpdateUpgradeHistory::random,

@@ -25,3 +25,4 @@ firmware = { path = "../firmware" }
 env_logger = "0.10.1"
 chrono = "0.4.31"
 actix-rt = "2.9.0"
+diesel = { version = "2.1.4", features = ["postgres", "chrono", "r2d2"] }

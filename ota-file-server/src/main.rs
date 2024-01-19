@@ -1,9 +1,9 @@
 use actix_web::{middleware, web, App, HttpServer};
 use clap::Parser;
-use firmware::{routes::firmware_data::apis, AppState};
-use log::{error, info};
+
+use firmware::{routes::firmware_data::apis, Database};
+use log::info;
 use ota_file_server::args::Cli;
-use sqlx::postgres::PgPoolOptions;
 use std::env;
 
 /// LogicPi Logo
@@ -26,23 +26,14 @@ async fn main() -> std::io::Result<()> {
     println!("OTA File Server, Version: {}", version);
 
     // set log level
-    env::set_var("RUST_LOG", "debug,actix_web=debug");
+    env::set_var("RUST_LOG", "debug");
     pretty_env_logger::init_custom_env("RUST_LOG");
 
     let _fw_path = env::var("FW_PATH").unwrap_or_else(|_| cli.fw_path.clone());
     let _fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone());
     let _port = env::var("PORT").unwrap_or_else(|_| (cli.port as u32).to_string());
 
-    let pool = match PgPoolOptions::new().connect(&_fw_db).await {
-        Ok(pool) => {
-            info!("✅Connection to the database is successful!");
-            pool
-        }
-        Err(err) => {
-            error!("🔥 Failed to connect to the database: {:?}", err);
-            std::process::exit(1);
-        }
-    };
+    let db = Database::new(&_fw_db);
 
     // Create a listener
     let server = format!("0.0.0.0:{}", _port);
@@ -52,7 +43,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
-            .app_data(web::Data::new(AppState { db: pool.clone() }))
+            .app_data(web::Data::new(db.clone()))
             .service(apis())
     })
     .bind(server)?

@@ -1,6 +1,5 @@
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use sqlx::{Pool, Postgres};
 
 pub mod common;
 pub mod config;
@@ -13,7 +12,17 @@ pub mod schema;
 pub type DbError = Box<dyn std::error::Error + Send + Sync>;
 pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
-pub struct AppState {
-    pub db: Pool<Postgres>,
-    // pub env: Config,
+#[derive(Debug, Clone)]
+pub struct Database {
+    pub pool: DbPool,
+}
+
+impl Database {
+    pub fn new(db_url: &str) -> Self {
+        let manager = ConnectionManager::<PgConnection>::new(db_url);
+        let pool: DbPool = r2d2::Pool::builder()
+            .build(manager)
+            .expect("Failed to create pool.");
+        Database { pool }
+    }
 }
