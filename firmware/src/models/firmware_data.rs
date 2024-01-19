@@ -29,7 +29,7 @@ impl HasId for FirmwareData {
     }
 }
 
-#[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq)]
+#[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq, Clone)]
 #[diesel(table_name = firmware_data)]
 pub struct NewFirmwareData {
     pub fwcode: i32,
@@ -52,7 +52,7 @@ impl NewFirmwareData {
     }
 }
 
-#[derive(Debug, Deserialize, AsChangeset, Serialize, Default)]
+#[derive(Debug, Deserialize, AsChangeset, Serialize, Default, Clone)]
 #[diesel(table_name = firmware_data )]
 pub struct UpdateFirmwareData {
     pub fwcode: i32,

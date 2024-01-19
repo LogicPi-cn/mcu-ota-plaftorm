@@ -30,7 +30,7 @@ impl HasId for UpgradeHistory {
     }
 }
 
-#[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq)]
+#[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq, Clone)]
 #[diesel(table_name = upgrade_history)]
 pub struct NewUpgradeHistory {
     pub sn: i32,
@@ -56,7 +56,7 @@ impl NewUpgradeHistory {
     }
 }
 
-#[derive(Debug, Deserialize, AsChangeset, Serialize, Default)]
+#[derive(Debug, Deserialize, AsChangeset, Serialize, Default, Clone)]
 #[diesel(table_name = upgrade_history )]
 pub struct UpdateUpgradeHistory {
     pub sn: i32,

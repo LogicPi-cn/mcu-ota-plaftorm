@@ -43,7 +43,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
-            .app_data(web::Data::new(db.clone()))
+            .app_data(web::Data::new(db.clone().pool))
             .service(apis())
     })
     .bind(server)?

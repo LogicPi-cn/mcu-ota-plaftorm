@@ -57,8 +57,8 @@ pub async fn _test_endpoints<T0, Tn, Tu, F1, F2, F3, F4, F5>(
         + std::cmp::PartialEq
         + for<'de> serde::Deserialize<'de>
         + HasId,
-    Tn: Serialize + Debug + for<'de> serde::Deserialize<'de>,
-    Tu: Serialize + Debug + for<'de> serde::Deserialize<'de>,
+    Tn: Serialize + Debug + for<'de> serde::Deserialize<'de> + Clone,
+    Tu: Serialize + Debug + for<'de> serde::Deserialize<'de> + Clone,
     F1: 'static + HttpServiceFactory,
     F2: 'static + HttpServiceFactory,
     F3: 'static + HttpServiceFactory,
@@ -83,7 +83,7 @@ pub async fn _test_endpoints<T0, Tn, Tu, F1, F2, F3, F4, F5>(
 
     // create
     let new_data = new_data_fn();
-    let inserted_data: T0 = _create_data(&app, path, new_data).await.unwrap();
+    let inserted_data: T0 = _create_data(&app, path, new_data.clone()).await.unwrap();
     debug!("Insert : {:?}", inserted_data);
 
     // find
@@ -98,6 +98,7 @@ pub async fn _test_endpoints<T0, Tn, Tu, F1, F2, F3, F4, F5>(
     _update_data(&app, update_data, path, new_id).await;
 
     // delete
+    debug!("Deleted: {:?}", &new_data.clone());
     _delete_data(&app, &path, new_id).await;
 }
 
