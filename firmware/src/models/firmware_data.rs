@@ -9,7 +9,7 @@ use serde_derive::{Deserialize, Serialize};
 
 use super::basic::random_i32;
 
-#[derive(Deserialize, Serialize, Queryable, Debug, AsChangeset, PartialEq, Default)]
+#[derive(Deserialize, Serialize, Queryable, Debug, AsChangeset, PartialEq, Default, Eq)]
 #[diesel(table_name = firmware_data)]
 pub struct FirmwareData {
     pub id: i32,
@@ -29,7 +29,7 @@ impl HasId for FirmwareData {
     }
 }
 
-#[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq, Clone)]
+#[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq, Clone, Eq)]
 #[diesel(table_name = firmware_data)]
 pub struct NewFirmwareData {
     pub fwcode: i32,

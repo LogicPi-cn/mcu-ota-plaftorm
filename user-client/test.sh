@@ -1,0 +1,1 @@
+cargo run -- --server http://127.0.0.1:20000/firmware --fw-code 1987 --fw-version 0.2.0 --fw-path ../file/1987-0.2.0.bin
