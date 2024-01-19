@@ -1,4 +1,3 @@
-use config::Config;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use sqlx::{Pool, Postgres};
@@ -16,5 +15,5 @@ pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 
 pub struct AppState {
     pub db: Pool<Postgres>,
-    pub env: Config,
+    // pub env: Config,
 }

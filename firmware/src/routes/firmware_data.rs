@@ -22,7 +22,7 @@ fn upgrade_history(path: &str) -> Scope {
 }
 
 pub fn apis() -> Scope {
-    let service = web::scope("/")
+    let service = web::scope("")
         .service(upgrade_history("/history"))
         .service(firmware_data("/firmware"));
     return service;

@@ -1,6 +1,6 @@
 use actix_web::{middleware, web, App, HttpServer};
 use clap::Parser;
-use firmware::{config::Config, routes::firmware_data::apis, AppState};
+use firmware::{routes::firmware_data::apis, AppState};
 use log::{error, info};
 use ota_file_server::args::Cli;
 use sqlx::postgres::PgPoolOptions;
@@ -33,8 +33,6 @@ async fn main() -> std::io::Result<()> {
     let _fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone());
     let _port = env::var("PORT").unwrap_or_else(|_| (cli.port as u32).to_string());
 
-    let config = Config::init();
-
     let pool = match PgPoolOptions::new().connect(&_fw_db).await {
         Ok(pool) => {
             info!("✅Connection to the database is successful!");
@@ -54,10 +52,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
-            .app_data(web::Data::new(AppState {
-                db: pool.clone(),
-                env: config.clone(),
-            }))
+            .app_data(web::Data::new(AppState { db: pool.clone() }))
             .service(apis())
     })
     .bind(server)?
