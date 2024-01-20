@@ -1,109 +1,83 @@
-use crate::common::{FirmwareData, FirmwareInfo};
+use std::sync::Arc;
 
-use actix_web::{delete, get, post, put, web, HttpResponse, Responder};
-use log::debug;
-use sqlx::{Pool, Postgres, Row};
+use base64::{engine::general_purpose, Engine};
+use log::{debug, error};
+use reqwest::Error;
+use tokio::{
+    sync::Mutex,
+    time::{self, Duration},
+};
 
-#[derive(Clone)]
-pub struct Database {
-    pub db: Pool<Postgres>,
-}
+use crate::models::firmware_data::FirmwareData;
 
-impl Database {
-    pub async fn create_firmware_data(
-        &self,
-        firmware_data: &FirmwareData,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query("INSERT INTO firmware_data (info, data) VALUES ($1, $2)")
-            .bind(serde_json::to_string(&firmware_data.info).unwrap())
-            .bind(serde_json::to_string(&firmware_data.data).unwrap())
-            .execute(&self.db)
-            .await?;
+/// 从postgres数据库读取所有固件
+async fn read_all_fw_from_pg(fw_server: &str) -> Result<Vec<FirmwareData>, Error> {
+    let client = reqwest::Client::new();
+    let response = client.get(format!("{}/firmware", fw_server)).send().await;
 
-        Ok(())
-    }
+    let mut result_data: Vec<FirmwareData> = Vec::new();
 
-    pub async fn read_firmware_data(&self, id: i32) -> Result<FirmwareData, sqlx::Error> {
-        let row = sqlx::query("SELECT info, data FROM firmware_data WHERE id = $1")
-            .bind(id)
-            .fetch_one(&self.db)
-            .await?;
+    match response {
+        Ok(response) => {
+            let fw_datas: Vec<FirmwareData> = response.json().await?;
+            debug!("Found {} firmware files.", fw_datas.len());
 
-        let info: String = row.get("info");
-        let data: Vec<u8> = row.get("data");
+            for fw_data in fw_datas {
+                debug!("Downloading... {}", fw_data);
+                let new_data = FirmwareData {
+                    id: fw_data.id,
+                    fwcode: fw_data.fwcode,
+                    version_m: fw_data.version_m,
+                    version_n: fw_data.version_n,
+                    version_l: fw_data.version_l,
+                    fwdata: general_purpose::STANDARD.decode(&fw_data.fwdata).unwrap(),
+                    fwsize: fw_data.fwsize,
+                    created_at: fw_data.created_at,
+                    updated_at: fw_data.updated_at,
+                };
 
-        let info: FirmwareInfo = serde_json::from_str(&info).unwrap();
-
-        Ok(FirmwareData { info, data })
-    }
-
-    pub async fn update_firmware_data(
-        &self,
-        id: i32,
-        firmware_data: &FirmwareData,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query("UPDATE firmware_data SET info = $1, data = $2 WHERE id = $3")
-            .bind(serde_json::to_string(&firmware_data.info).unwrap())
-            .bind(&firmware_data.data)
-            .bind(id)
-            .execute(&self.db)
-            .await?;
-
-        Ok(())
-    }
-
-    pub async fn delete_firmware_data(&self, id: i32) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM firmware_data WHERE id = $1")
-            .bind(id)
-            .execute(&self.db)
-            .await?;
-
-        Ok(())
-    }
-}
-
-#[post("/firmware")]
-async fn create_firmware(
-    db: web::Data<Database>,
-    firmware_data: web::Json<FirmwareData>,
-) -> impl Responder {
-    let result = db.create_firmware_data(&firmware_data).await;
-    match result {
-        Ok(_) => HttpResponse::Created().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
-    }
-}
-
-#[get("/firmware/{id}")]
-async fn read_firmware(db: web::Data<Database>, id: web::Path<i32>) -> impl Responder {
-    let result = db.read_firmware_data(*id).await;
-    match result {
-        Ok(firmware_data) => {
-            debug!("{}", firmware_data.info);
-            HttpResponse::Ok().json(firmware_data)
+                result_data.push(new_data);
+            }
         }
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
+        Err(e) => {
+            error!("Error:{}, fw_server={}", e, fw_server);
+        }
+    }
+
+    Ok(result_data)
+}
+
+/// 定时刷新固件数据
+/// ## 参数
+/// - fw_server   : 服务器地址
+/// - min         : 刷新周期，以分钟为单位
+/// - fw_data_all : 原子变量，存放所有固件数据
+pub async fn refresh_firmware_data(fw_server: &str, fw_data_all: Arc<Mutex<Vec<FirmwareData>>>) {
+    // 刷新周期
+    let refresh_duration = Duration::from_secs(1 * 60);
+
+    loop {
+        // 读取固件数据
+        let new_data = read_all_fw_from_pg(&fw_server).await;
+
+        match new_data {
+            Ok(new_data) => {
+                // 更新全局变量
+                let mut fw_data_all = fw_data_all.lock().await;
+                *fw_data_all = new_data;
+
+                debug!("Refreshed");
+            }
+            Err(e) => {
+                error!("Error:{}", e);
+            }
+        }
+        time::sleep(refresh_duration).await;
     }
 }
 
-#[put("/firmware/{id}")]
-async fn update_firmware(
-    db: web::Data<Database>,
-    id: web::Path<i32>,
-    firmware_data: web::Json<FirmwareData>,
-) -> impl Responder {
-    let result = db.update_firmware_data(*id, &firmware_data.0).await;
-    match result {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
-    }
-}
-
-#[delete("/firmware/{id}")]
-async fn delete_firmware(db: web::Data<Database>, id: web::Path<i32>) -> impl Responder {
-    let result = db.delete_firmware_data(*id).await;
-    match result {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
-    }
+/// 读取固件数据
+pub async fn read_firmware_data(fw_data_all: Arc<Mutex<Vec<FirmwareData>>>) -> Vec<FirmwareData> {
+    let fw_data_all = fw_data_all.lock().await;
+    fw_data_all.clone() // 注意，这里我们返回了数据的一份克隆
 }

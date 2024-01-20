@@ -1,7 +1,7 @@
 use clap::Parser;
-use firmware::from_http::refresh_firmware_data;
+use firmware::from_pg::refresh_firmware_data;
 use log::{error, info};
-use mcu_ota_server::{args::Cli, request_process::handle_client};
+use mcu_ota_server::{args::Cli, process_pg::handle_client};
 use tokio::sync::Mutex;
 
 use std::sync::Arc;

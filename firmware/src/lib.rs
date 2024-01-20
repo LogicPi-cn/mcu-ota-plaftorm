@@ -1,10 +1,9 @@
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 
-pub mod common;
 pub mod config;
 pub mod controls;
-pub mod from_http;
+pub mod from_pg;
 pub mod models;
 pub mod routes;
 pub mod schema;

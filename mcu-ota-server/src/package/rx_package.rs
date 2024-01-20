@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use crc::{Crc, CRC_8_MAXIM_DOW};
-use firmware::common::FirmwareInfo;
+use firmware::models::firmware_data::FirmwareInfo;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
 use crate::{PKG_RX_FW_DATA, PKG_RX_FW_END, PKG_RX_FW_INFO};
@@ -84,9 +84,9 @@ fn gen_fw_query_data_package(fw_info: &FirmwareInfo, index: u16, slice: u16) -> 
         0x09,                        // Len 低8位
         (fw_info.code >> 8) as u8,   // 固件代号 高8位
         (fw_info.code & 0xFF) as u8, // 固件代号 低8位
-        fw_info.version.m,           // 固件版本号 大
-        fw_info.version.n,           // 固件版本号 中
-        fw_info.version.l,           // 固件版本号 小
+        fw_info.version.m as u8,     // 固件版本号 大
+        fw_info.version.n as u8,     // 固件版本号 中
+        fw_info.version.l as u8,     // 固件版本号 小
         (index >> 8) as u8,          // index 高8位
         (index & 0xFF) as u8,        // index 低8位
         (slice >> 8) as u8,          // slice 高8位
@@ -114,9 +114,9 @@ fn gen_fw_query_end_package(fw_info: &FirmwareInfo) -> Vec<u8> {
         0x05,                        // 长度
         (fw_info.code >> 8) as u8,   // Code 高8位
         (fw_info.code & 0xFF) as u8, // Code 低8位
-        fw_info.version.m,           // 版本号 大
-        fw_info.version.n,           // 版本号 中
-        fw_info.version.l,           // 版本号 小
+        fw_info.version.m as u8,     // 版本号 大
+        fw_info.version.n as u8,     // 版本号 中
+        fw_info.version.l as u8,     // 版本号 小
     ];
 
     // 计算crc
