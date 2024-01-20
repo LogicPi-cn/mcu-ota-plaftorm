@@ -10,7 +10,7 @@ pub struct Cli {
 
     // Firmware Code
     #[clap(long)]
-    pub fw_code: i32,
+    pub fw_code: String,
 
     // Firmware Version
     #[clap(long)]

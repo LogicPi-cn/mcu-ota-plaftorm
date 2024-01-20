@@ -82,6 +82,17 @@ impl NewFirmwareData {
     }
 }
 
+/// 格式化打印
+impl fmt::Display for NewFirmwareData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "FwInfo -> Code:{:04X}, Version: {}.{}.{}, Size: {} bytes",
+            self.fwcode, self.version_m, self.version_n, self.version_l, self.fwsize
+        )
+    }
+}
+
 #[derive(Debug, Deserialize, AsChangeset, Serialize, Default, Clone)]
 #[diesel(table_name = firmware_data )]
 pub struct UpdateFirmwareData {
@@ -105,6 +116,17 @@ impl UpdateFirmwareData {
             fwdata: vec![0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88],
             updated_at: Some(Utc::now().naive_utc()),
         }
+    }
+}
+
+/// 格式化打印
+impl fmt::Display for UpdateFirmwareData {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "FwInfo -> Code:{:04X}, Version: {}.{}.{}, Size: {} bytes",
+            self.fwcode, self.version_m, self.version_n, self.version_l, self.fwsize
+        )
     }
 }
 

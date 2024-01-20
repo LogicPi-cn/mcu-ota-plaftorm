@@ -1,20 +1,31 @@
 use base64::Engine;
 use clap::Parser;
-use firmware::models::firmware_data::NewFirmwareData;
+use firmware::models::firmware_data::{
+    find_firmware, FirmwareVersion, NewFirmwareData, UpdateFirmwareData,
+};
+
+use chrono::Utc;
+use log::info;
+use std::env;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 use user_client::args::Cli;
+use user_client::operation::{get_all_fw_datas, push_new_firmware, update_firmware};
 
 use base64::engine::general_purpose;
 use tokio::runtime::Runtime;
 
 fn main() {
+    // set log level
+    env::set_var("RUST_LOG", "info");
+    pretty_env_logger::init_custom_env("RUST_LOG");
+
     // Get Parameters
     let cli = Cli::parse();
 
     let sever = cli.server.clone();
-    let fwcode = cli.fw_code.clone();
+    let fwcode = i32::from_str_radix(&cli.fw_code.clone(), 16).unwrap();
     let version = cli.fw_version.clone();
     let file_path = cli.fw_path.clone();
 
@@ -33,8 +44,14 @@ fn main() {
         .expect("Failed to get file metadata")
         .len() as i32;
 
+    let _version = FirmwareVersion {
+        m: version_m,
+        n: version_n,
+        l: version_l,
+    };
+
     // 创建 FirmwareData 实例
-    let data = NewFirmwareData {
+    let _new_data = NewFirmwareData {
         fwcode,
         version_m,
         version_n,
@@ -43,39 +60,32 @@ fn main() {
         fwdata: general_purpose::STANDARD.encode(&buf).into(),
     };
 
+    // 创新待更新的UpdateFirmwareData
+    let _updated_fw = UpdateFirmwareData {
+        fwcode,
+        version_m,
+        version_n,
+        version_l,
+        fwsize,
+        fwdata: general_purpose::STANDARD.encode(&buf).into(),
+        updated_at: Some(Utc::now().naive_utc()),
+    };
+
     // 创建并运行异步任务
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        let client = reqwest::Client::new();
+        let all_fw_files = get_all_fw_datas(&sever.clone()).await;
 
-        // 检查是否有固件
-        // let res = client.get(&sever.clone()).send().await;
-        // match res {
-        //     Ok(response) => {
-        //         if response.status().is_success() {
-        //             println!("Firmware uploaded successfully");
-        //         } else {
-        //             println!("Failed to upload firmware: {}", response.status());
-        //         }
-        //     }
-        //     Err(e) => {
-        //         println!("Failed to find firmware: {}", e);
-        //     }
-        // }
-
-        // 发送 POST 请求
-        let res = client.post(&sever.clone()).json(&data).send().await;
-
-        match res {
-            Ok(response) => {
-                if response.status().is_success() {
-                    println!("Firmware uploaded successfully");
-                } else {
-                    println!("Failed to upload firmware: {}", response.status());
-                }
+        match find_firmware(&all_fw_files, fwcode, _version) {
+            Some(old_fw) => {
+                // 如果已有固件了，则更新固件
+                info!("Firmware existed, updating... {}", _updated_fw);
+                update_firmware(&sever.clone(), old_fw.id, &_updated_fw).await;
             }
-            Err(e) => {
-                println!("Failed to upload firmware: {}", e);
+            None => {
+                // 如果没有找到固件，则新上传
+                info!("Upload a new firmware -> {}", _new_data);
+                push_new_firmware(&sever.clone(), &_new_data).await;
             }
         }
     });
