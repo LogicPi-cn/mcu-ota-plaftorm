@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   ota-file-server:
-    image: logicpi/ota-file-server:0.1.4
+    image: logicpi/ota-file-server:0.2.0
     container_name: ota-file-server
     ports:
       - 20000:20000
@@ -13,7 +13,7 @@ services:
       - pg
 
   mcu-ota-server:
-    image: logicpi/mcu-ota-server:0.1.9
+    image: logicpi/mcu-ota-server:0.2.0
     container_name: mcu-ota-server
     ports:
       - 9999:9999
@@ -31,7 +31,6 @@ services:
       - POSTGRES_PASSWORD=3.1415926
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
 
 volumes:
   pgdata:

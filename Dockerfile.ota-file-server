@@ -9,7 +9,8 @@ RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debi
 
 # 替换默认的 Debian 软件源
 RUN apt-get update && \
-    apt-get install -y cmake build-essential
+    apt-get install -y cmake build-essential && \
+    cargo install diesel_cli --no-default-features --features postgres
 
 # 在容器中创建一个工作目录
 WORKDIR /app
@@ -28,6 +29,10 @@ COPY . .
 
 # 使用 Cargo 构建项目
 RUN cargo build --release 
+
+# 初始化数据库
+RUN cd /app/firmware
+RUN diesel setup && diesel migration run
 
 # 从新的镜像开始构建
 FROM ubuntu:22.04

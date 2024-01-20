@@ -1,6 +1,6 @@
 [package]
 name = "ota-file-server"
-version = "0.1.4"
+version = "0.2.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -22,7 +22,7 @@ sqlx = { version = "0.7.3", features = [
 serde_json = "1.0.111"
 
 firmware = { path = "../firmware" }
-env_logger = "0.10.1"
+env_logger = "0.11.0"
 chrono = "0.4.31"
 actix-rt = "2.9.0"
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "r2d2"] }
