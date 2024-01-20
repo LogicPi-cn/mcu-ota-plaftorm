@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-reqwest = { version = "0.11.23", features = ["json"] }
+reqwest = { version = "0.11.23", features = ["native-tls-vendored", "json"] }
 crc = "3.0.1"
 log = "0.4.20"
 tokio = { version = "1.35.1", features = ["full"] }
@@ -15,17 +15,11 @@ clap = { version = "4.4.12", features = ["derive"] }
 regex = "1.10.2"
 rand = "0.8.5"
 serde = { version = "1.0.195", features = ["serde_derive"] }
-sqlx = { version = "0.7.3", features = [
-    "postgres",
-    "runtime-tokio",
-    "tls-rustls",
-] }
 serde_json = "1.0.111"
 actix-web = "4.4.1"
 actix-rt = "2.9.0"
 base64 = "0.21.7"
-engine = "0.0.0"
-chrono = { version = "0.4.31", features = ["serde", "rustc-serialize"] }
+chrono = { version = "0.4.31", features = ["serde"] }
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "r2d2"] }
 serde_derive = "1.0.152"
 dotenv = { version = "0.15.0", features = ["clap"] }
@@ -34,7 +28,7 @@ dotenv = { version = "0.15.0", features = ["clap"] }
 [dev-dependencies]
 actix-web = "4.3.0"
 diesel = { version = "2.0.0", features = ["postgres", "chrono", "r2d2"] }
-env_logger = "0.10.0"
+env_logger = "0.11.0"
 pretty_env_logger = "0.5.0"
 tokio = { version = "1.24.2", features = ["full"] }
 r2d2 = "0.8.10"
