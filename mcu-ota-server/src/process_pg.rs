@@ -146,7 +146,7 @@ async fn proces_fw_download_request(
                     _slice,
                     data.len()
                 );
-                send_fw_info(
+                send_fw_data(
                     &FirmwareInfo {
                         code: fw_data.fwcode,
                         version: FirmwareVersion {
@@ -157,6 +157,8 @@ async fn proces_fw_download_request(
                         size: fw_data.fwsize,
                         path: String::from(""),
                     },
+                    &data,
+                    _index,
                     socket,
                 )
                 .await?;
