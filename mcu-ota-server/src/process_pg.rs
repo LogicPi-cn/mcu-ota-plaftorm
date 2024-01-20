@@ -191,9 +191,9 @@ async fn proces_fw_download_request(
 // 处理固件结束请求
 async fn proces_fw_end_request(
     request: &Vec<u8>,
-    socket: &mut TcpStream,
+    _socket: &mut TcpStream,
     _code: i32,
-    fw_data_all: &Vec<FirmwareData>,
+    _fw_data_all: &Vec<FirmwareData>,
     pool: DbPool,
 ) -> Result<(), Box<dyn Error>> {
     debug!("[Command] Download Firmware Over.");
@@ -240,26 +240,6 @@ async fn proces_fw_end_request(
         Err(e) => {
             error!("Add upgrade histroy failed. {}", e);
         }
-    }
-
-    if let Some(fw_data) = find_firmware(fw_data_all, _code, _version) {
-        send_fw_end(
-            &FirmwareInfo {
-                code: fw_data.fwcode,
-                version: FirmwareVersion {
-                    m: fw_data.version_m,
-                    n: fw_data.version_n,
-                    l: fw_data.version_l,
-                },
-                size: fw_data.fwsize,
-                path: String::from(""),
-            },
-            socket,
-        )
-        .await?;
-    } else {
-        error!("No firmware found!");
-        send_failed_package(socket, PKG_FAILED_NO_FW_FOUND).await?;
     }
 
     Ok(())
