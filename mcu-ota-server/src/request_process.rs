@@ -166,9 +166,6 @@ async fn proces_fw_end_request(
         l: request[9],
     };
 
-    let _index = (request[10] as u16) << 8 | request[11] as u16; // 切片序号
-    let _slice = (request[12] as u16) << 8 | request[13] as u16; // 切片大小，一般默认512
-
     if let Some(fw_data) = find_firmware(fw_data_all, _code, _version) {
         send_fw_end(&fw_data.info, socket).await?;
     } else {

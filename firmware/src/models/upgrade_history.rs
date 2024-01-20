@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{
     models::basic::{CrudOperations, HasId},
     schema::upgrade_history,
@@ -30,6 +32,17 @@ impl HasId for UpgradeHistory {
     }
 }
 
+/// 格式化打印
+impl fmt::Display for UpgradeHistory {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "UpgradeHistory -> sn:{:08X}, device_id:{:16X}, Code:{:04X}, Version:{}.{}.{}, Status:{}",
+            self.sn, self.device_id, self.fwcode, self.version_m, self.version_n, self.version_l, self.success
+        )
+    }
+}
+
 #[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq, Clone)]
 #[diesel(table_name = upgrade_history)]
 pub struct NewUpgradeHistory {
@@ -53,6 +66,17 @@ impl NewUpgradeHistory {
             version_l: random_i32(),
             success: true,
         }
+    }
+}
+
+/// 格式化打印
+impl fmt::Display for NewUpgradeHistory {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "UpgradeHistory -> sn:{:08X}, device_id:{:16X}, Code:{:04X}, Version:{}.{}.{}, Status:{}",
+            self.sn, self.device_id, self.fwcode, self.version_m, self.version_n, self.version_l, self.success
+        )
     }
 }
 
@@ -81,6 +105,17 @@ impl UpdateUpgradeHistory {
             success: true,
             updated_at: Some(Utc::now().naive_utc()),
         }
+    }
+}
+
+/// 格式化打印
+impl fmt::Display for UpdateUpgradeHistory {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "UpgradeHistory -> sn:{:08X}, device_id:{:16X}, Code:{:04X}, Version:{}.{}.{}, Status:{}",
+            self.sn, self.device_id, self.fwcode, self.version_m, self.version_n, self.version_l, self.success
+        )
     }
 }
 

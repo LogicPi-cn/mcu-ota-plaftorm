@@ -34,6 +34,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // parameters
     let fw_server = env::var("FW_SERVER").unwrap_or_else(|_| (cli.fw_server.clone()).to_string());
     let port = env::var("PORT").unwrap_or_else(|_| (cli.port.clone() as u32).to_string());
+    let fw_db = Arc::new(env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone()));
 
     // Create a listener
     let server = format!("0.0.0.0:{}", port);
@@ -45,7 +46,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // 复制一个变量
     let _fw_data_all = Arc::clone(&fw_data_all);
-
     tokio::spawn(async move {
         refresh_firmware_data(&fw_server.clone(), _fw_data_all).await;
     });
@@ -56,10 +56,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         // 复制一个变量
         let _fw_data_all = Arc::clone(&fw_data_all);
+        let _fw_db = Arc::clone(&fw_db);
 
         // 使用tokio的spawn函数，在独立的任务中处理每个客户端连接
         tokio::spawn(async move {
-            if let Err(error) = handle_client(socket, _fw_data_all).await {
+            if let Err(error) = handle_client(socket, _fw_data_all, _fw_db).await {
                 error!("Error handling client: {}", error);
             }
         });

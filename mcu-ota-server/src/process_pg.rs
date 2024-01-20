@@ -1,6 +1,13 @@
-use firmware::models::firmware_data::{
-    find_firmware, find_latest_fw, slice_fw_data_from_vector, FirmwareData, FirmwareInfo,
-    FirmwareVersion,
+use firmware::{
+    models::{
+        basic::CrudOperations,
+        firmware_data::{
+            find_firmware, find_latest_fw, slice_fw_data_from_vector, FirmwareData, FirmwareInfo,
+            FirmwareVersion,
+        },
+        upgrade_history::{NewUpgradeHistory, UpgradeHistory},
+    },
+    Database, DbPool,
 };
 use log::{debug, error, info};
 use std::{error::Error, sync::Arc};
@@ -16,10 +23,13 @@ use crate::{
 pub async fn handle_client(
     mut socket: TcpStream,
     fw_data_all: Arc<Mutex<Vec<FirmwareData>>>,
+    fw_db: Arc<String>,
 ) -> Result<(), Box<dyn Error>> {
     info!("New client connected: {:?}", socket.peer_addr()?);
 
     let mut buffer = [0; 1024];
+
+    let db = Database::new(&fw_db);
 
     loop {
         // 从客户端读取数据
@@ -34,7 +44,7 @@ pub async fn handle_client(
         let request = &buffer[..bytes_read].to_vec();
         let fw_data_all = fw_data_all.lock().await;
 
-        package_process(request, &mut socket, &fw_data_all).await?;
+        package_process(request, &mut socket, &fw_data_all, db.clone().pool).await?;
 
         // 清空缓冲区
         buffer.fill(0);
@@ -49,6 +59,7 @@ async fn package_process(
     request: &Vec<u8>,
     socket: &mut TcpStream,
     fw_data_all: &Vec<FirmwareData>,
+    pool: DbPool,
 ) -> Result<(), Box<dyn Error>> {
     // 最低长度为7
     if request.len() >= 7 {
@@ -69,7 +80,7 @@ async fn package_process(
 
             // 下载结束指令
             if request[2] == PKG_RX_FW_END {
-                proces_fw_end_request(request, socket, _code as i32, &fw_data_all).await?;
+                proces_fw_end_request(request, socket, _code as i32, &fw_data_all, pool).await?;
             }
         } else {
             // CRC失败
@@ -183,6 +194,7 @@ async fn proces_fw_end_request(
     socket: &mut TcpStream,
     _code: i32,
     fw_data_all: &Vec<FirmwareData>,
+    pool: DbPool,
 ) -> Result<(), Box<dyn Error>> {
     debug!("[Command] Download Firmware Over.");
 
@@ -192,8 +204,43 @@ async fn proces_fw_end_request(
         l: request[9] as i32,
     };
 
-    let _index = (request[10] as u16) << 8 | request[11] as u16; // 切片序号
-    let _slice = (request[12] as u16) << 8 | request[13] as u16; // 切片大小，一般默认512
+    // 设备信息
+    let device_id = (request[10] as i64) << 56
+        | (request[11] as i64) << 48
+        | (request[12] as i64) << 40
+        | (request[13] as i64) << 32
+        | (request[14] as i64) << 24
+        | (request[15] as i64) << 16
+        | (request[16] as i64) << 8
+        | request[17] as i64;
+
+    let sn = (request[18] as i32) << 24
+        | (request[19] as i32) << 16
+        | (request[20] as i32) << 8
+        | request[21] as i32;
+
+    let success = request[22] == 0xA1;
+
+    let new_history = NewUpgradeHistory {
+        sn,
+        device_id,
+        fwcode: _code,
+        version_m: request[7] as i32,
+        version_n: request[8] as i32,
+        version_l: request[9] as i32,
+        success,
+    };
+
+    // 插入数据库
+    let mut conn = pool.get()?;
+    match UpgradeHistory::create(new_history.clone(), &mut conn) {
+        Ok(_) => {
+            info!("Add upgrade histroy success. {}", new_history);
+        }
+        Err(e) => {
+            error!("Add upgrade histroy failed. {}", e);
+        }
+    }
 
     if let Some(fw_data) = find_firmware(fw_data_all, _code, _version) {
         send_fw_end(
