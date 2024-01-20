@@ -9,8 +9,7 @@ RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debi
 
 # 替换默认的 Debian 软件源
 RUN apt-get update && \
-    apt-get install -y cmake build-essential && \
-    cargo install diesel_cli --no-default-features --features postgres
+    apt-get install -y cmake build-essential
 
 # 在容器中创建一个工作目录
 WORKDIR /app
