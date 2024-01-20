@@ -1,7 +1,7 @@
 FROM postgres:latest
 
-COPY firmware/migrations/00000000000000_diesel_initial_setup/up.sql /docker-entrypoint-initdb.d/
-COPY firmware/migrations/2024-01-19-070545_fw-data/up.sql /docker-entrypoint-initdb.d/
+COPY firmware/migrations/00000000000000_diesel_initial_setup/up.sql /docker-entrypoint-initdb.d/1.sql
+COPY firmware/migrations/2024-01-19-070545_fw-data/up.sql /docker-entrypoint-initdb.d/2.sql
 
 ENV POSTGRES_USER craftor
 ENV POSTGRES_PASSWORD 3.1415926 
