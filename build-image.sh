@@ -1,6 +1,10 @@
 #!/bin/bash
 
+# 登录 Docker
 docker login
+
+# 定义白名单数组
+whitelist=("firmware" "mcu-ota-server" "ota-file-server")
 
 # 遍历工作区中的每个应用
 for dir in $(find . -maxdepth 1 -type d ! -name ".*" ! -name "target" -print); do
@@ -17,12 +21,14 @@ for dir in $(find . -maxdepth 1 -type d ! -name ".*" ! -name "target" -print); d
         # 返回上一层目录
         cd ..
 
-        # 打包并上传
-        docker buildx build \
-                -f Dockerfile.$app_name \
-                --tag logicpi/$app_name:$app_version .\
-                --platform linux/amd64 \
-                --push
-        
+        # 检查应用的名称是否在白名单中
+        if printf '%s\n' "${whitelist[@]}" | grep -q -P "^$app_name$"; then
+            # 打包并上传
+            docker buildx build \
+                    -f Dockerfile.$app_name \
+                    --tag logicpi/$app_name:$app_version .\
+                    --platform linux/amd64 \
+                    --push
+        fi
     fi
 done
