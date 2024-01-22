@@ -11,7 +11,7 @@ use firmware::{
 };
 use log::{debug, error, info};
 use std::{error::Error, sync::Arc};
-use tokio::{io::AsyncReadExt, net::TcpStream};
+use tokio::{io::AsyncReadExt, net::TcpStream, sync::Mutex};
 
 use crate::{
     package::{common::package_check, tx_package::*},
@@ -22,13 +22,11 @@ use crate::{
 pub async fn handle_client(
     mut socket: TcpStream,
     fw_data_all: &Vec<FirmwareData>,
-    fw_db: Arc<String>,
+    db: Arc<Mutex<Database>>,
 ) -> Result<(), Box<dyn Error>> {
     info!("New client connected: {:?}", socket.peer_addr()?);
 
     let mut buffer = [0; 1024];
-
-    let db = Database::new(&fw_db);
 
     loop {
         // 从客户端读取数据
@@ -43,7 +41,10 @@ pub async fn handle_client(
         let request = &buffer[..bytes_read].to_vec();
 
         // 处理数据包
-        package_process(request, &mut socket, &fw_data_all, db.clone().pool).await?;
+        // package_process(request, &mut socket, &fw_data_all, &pool).await?;
+        let conn = &db.lock().await.pool;
+
+        package_process(request, &mut socket, &fw_data_all, &conn).await?;
 
         // 清空缓冲区
         buffer.fill(0);
@@ -58,7 +59,7 @@ async fn package_process(
     request: &[u8],
     socket: &mut TcpStream,
     fw_data_all: &Vec<FirmwareData>,
-    pool: DbPool,
+    pool: &DbPool,
 ) -> Result<(), Box<dyn Error>> {
     // 最低长度为7
     if request.len() >= 7 {
@@ -203,7 +204,7 @@ async fn proces_fw_end_request(
     _socket: &mut TcpStream,
     _code: i32,
     _fw_data_all: &Vec<FirmwareData>,
-    pool: DbPool,
+    pool: &DbPool,
 ) -> Result<(), Box<dyn Error>> {
     info!("[Command] Download Firmware Over.");
 
