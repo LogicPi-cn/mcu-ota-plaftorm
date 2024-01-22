@@ -25,7 +25,7 @@ services:
       - pg
 
   pg:
-    image: logicpi/firmware:0.2.2
+    image: logicpi/firmware:0.2.3
     container_name: mcu-ota-pg
     command: postgres -c 'max_connections=1000'
     # environment:
