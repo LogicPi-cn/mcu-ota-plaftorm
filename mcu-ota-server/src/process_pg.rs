@@ -15,8 +15,7 @@ use tokio::{io::AsyncReadExt, net::TcpStream, sync::Mutex};
 
 use crate::{
     package::{common::package_check, tx_package::*},
-    PKG_FAILED_CRC, PKG_FAILED_FW_READ_ERROR, PKG_FAILED_LEN, PKG_FAILED_NO_FW_FOUND,
-    PKG_RX_FW_DATA, PKG_RX_FW_END, PKG_RX_FW_INFO,
+    ErrorCode, PackageType,
 };
 
 /// 处理tcp请求入口
@@ -35,16 +34,22 @@ pub async fn handle_client(
         // 从客户端读取数据
         let bytes_read = socket.read(&mut buffer).await.unwrap();
 
+        // 客户端关闭连接
         if bytes_read == 0 {
-            // 客户端关闭连接
             break;
         }
 
         // 处理接收到的数据
         let request = &buffer[..bytes_read].to_vec();
-        let fw_data_all = fw_data_all.lock().await;
 
-        package_process(request, &mut socket, &fw_data_all, db.clone().pool).await?;
+        // 复制锁
+        let fw_data_clone = {
+            let fw_data_all = fw_data_all.lock().await;
+            fw_data_all.clone()
+        };
+
+        // 处理数据包
+        package_process(request, &mut socket, &fw_data_clone, db.clone().pool).await?;
 
         // 清空缓冲区
         buffer.fill(0);
@@ -56,7 +61,7 @@ pub async fn handle_client(
 }
 
 async fn package_process(
-    request: &Vec<u8>,
+    request: &[u8],
     socket: &mut TcpStream,
     fw_data_all: &Vec<FirmwareData>,
     pool: DbPool,
@@ -64,33 +69,43 @@ async fn package_process(
     // 最低长度为7
     if request.len() >= 7 {
         // CRC检查
-        if package_check(&request, request.len()) {
+        if package_check(request, request.len()) {
             // 固件代号
             let _code = (request[5] as u16) << 8 | request[6] as u16;
 
-            // 固件查询指令
-            if request[2] == PKG_RX_FW_INFO {
-                proces_fw_query_request(request, socket, _code as i32, &fw_data_all).await?;
-            }
+            // 从请求中获取包类型
+            let package_type = match request[2] {
+                x if x == PackageType::FirmwareQuery as u8 => PackageType::FirmwareQuery,
+                x if x == PackageType::FirmwareDownload as u8 => PackageType::FirmwareDownload,
+                x if x == PackageType::DownloadEnd as u8 => PackageType::DownloadEnd,
+                _ => {
+                    error!("Unknown package type!");
+                    send_failed_package(socket, ErrorCode::UnknownPackageType as u8).await?;
+                    return Ok(());
+                }
+            };
 
-            // 固件查询指令
-            if request[2] == PKG_RX_FW_DATA {
-                proces_fw_download_request(request, socket, _code as i32, &fw_data_all).await?;
-            }
-
-            // 下载结束指令
-            if request[2] == PKG_RX_FW_END {
-                proces_fw_end_request(request, socket, _code as i32, &fw_data_all, pool).await?;
-            }
+            // 根据包类型处理请求
+            match package_type {
+                PackageType::FirmwareQuery => {
+                    proces_fw_query_request(request, socket, _code as i32, fw_data_all).await?
+                }
+                PackageType::FirmwareDownload => {
+                    proces_fw_download_request(request, socket, _code as i32, fw_data_all).await?
+                }
+                PackageType::DownloadEnd => {
+                    proces_fw_end_request(request, socket, _code as i32, fw_data_all, pool).await?
+                }
+            };
         } else {
             // CRC失败
             error!("Package CRC Error!");
-            send_failed_package(socket, PKG_FAILED_CRC).await?;
+            send_failed_package(socket, ErrorCode::CrcError as u8).await?;
         }
     } else {
         // 长度不对
         error!("Package Length Error!");
-        send_failed_package(socket, PKG_FAILED_LEN).await?;
+        send_failed_package(socket, ErrorCode::LengthError as u8).await?;
     }
 
     Ok(())
@@ -98,7 +113,7 @@ async fn package_process(
 
 // 处理固件查询请求
 async fn proces_fw_query_request(
-    _request: &Vec<u8>,
+    _request: &[u8],
     socket: &mut TcpStream,
     code: i32,
     fw_data_all: &Vec<FirmwareData>,
@@ -121,7 +136,7 @@ async fn proces_fw_query_request(
         .await?;
     } else {
         error!("No firmware found!");
-        send_failed_package(socket, PKG_FAILED_NO_FW_FOUND).await?;
+        send_failed_package(socket, ErrorCode::NoFirmwareFound as u8).await?;
     }
 
     Ok(())
@@ -129,7 +144,7 @@ async fn proces_fw_query_request(
 
 // 处理固件下载请求
 async fn proces_fw_download_request(
-    request: &Vec<u8>,
+    request: &[u8],
     socket: &mut TcpStream,
     _code: i32,
     fw_data_all: &Vec<FirmwareData>,
@@ -177,12 +192,12 @@ async fn proces_fw_download_request(
             None => {
                 // 发送文件错误
                 debug!("Read Firmware Error!");
-                send_failed_package(socket, PKG_FAILED_FW_READ_ERROR).await?;
+                send_failed_package(socket, ErrorCode::FirmwareReadError as u8).await?;
             }
         }
     } else {
         error!("No firmware found!");
-        send_failed_package(socket, PKG_FAILED_NO_FW_FOUND).await?;
+        send_failed_package(socket, ErrorCode::NoFirmwareFound as u8).await?;
     }
 
     Ok(())
@@ -190,7 +205,7 @@ async fn proces_fw_download_request(
 
 // 处理固件结束请求
 async fn proces_fw_end_request(
-    request: &Vec<u8>,
+    request: &[u8],
     _socket: &mut TcpStream,
     _code: i32,
     _fw_data_all: &Vec<FirmwareData>,
