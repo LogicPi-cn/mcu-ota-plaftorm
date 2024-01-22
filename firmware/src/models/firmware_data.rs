@@ -198,7 +198,12 @@ pub fn find_firmware(
 ) -> Option<FirmwareData> {
     all_fw_files
         .iter()
-        .find(|firmware| firmware.fwcode == code && firmware.version_m == version.m)
+        .find(|firmware| {
+            firmware.fwcode == code
+                && firmware.version_m == version.m
+                && firmware.version_n == version.n
+                && firmware.version_l == version.l
+        })
         .cloned()
 }
 
