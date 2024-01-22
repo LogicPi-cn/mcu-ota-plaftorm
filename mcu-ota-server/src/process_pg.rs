@@ -11,7 +11,7 @@ use firmware::{
 };
 use log::{debug, error, info};
 use std::{error::Error, sync::Arc};
-use tokio::{io::AsyncReadExt, net::TcpStream, sync::Mutex};
+use tokio::{io::AsyncReadExt, net::TcpStream};
 
 use crate::{
     package::{common::package_check, tx_package::*},
@@ -21,7 +21,7 @@ use crate::{
 /// 处理tcp请求入口
 pub async fn handle_client(
     mut socket: TcpStream,
-    fw_data_all: Arc<Mutex<Vec<FirmwareData>>>,
+    fw_data_all: &Vec<FirmwareData>,
     fw_db: Arc<String>,
 ) -> Result<(), Box<dyn Error>> {
     info!("New client connected: {:?}", socket.peer_addr()?);
@@ -42,14 +42,8 @@ pub async fn handle_client(
         // 处理接收到的数据
         let request = &buffer[..bytes_read].to_vec();
 
-        // 复制锁
-        let fw_data_clone = {
-            let fw_data_all = fw_data_all.lock().await;
-            fw_data_all.clone()
-        };
-
         // 处理数据包
-        package_process(request, &mut socket, &fw_data_clone, db.clone().pool).await?;
+        package_process(request, &mut socket, &fw_data_all, db.clone().pool).await?;
 
         // 清空缓冲区
         buffer.fill(0);

@@ -11,7 +11,7 @@ use tokio::{
 use crate::models::firmware_data::FirmwareData;
 
 /// 从postgres数据库读取所有固件
-async fn read_all_fw_from_pg(fw_server: &str) -> Result<Vec<FirmwareData>, Error> {
+pub async fn read_all_fw_from_pg(fw_server: &str) -> Result<Vec<FirmwareData>, Error> {
     let client = reqwest::Client::new();
     let response = client.get(format!("{}/firmware", fw_server)).send().await;
 

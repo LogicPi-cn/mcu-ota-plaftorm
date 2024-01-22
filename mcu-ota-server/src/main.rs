@@ -1,8 +1,7 @@
 use clap::Parser;
-use firmware::from_pg::refresh_firmware_data;
+use firmware::from_pg::read_all_fw_from_pg;
 use log::{error, info};
 use mcu_ota_server::{args::Cli, process_pg::handle_client};
-use tokio::sync::Mutex;
 
 use std::sync::Arc;
 use std::{env, error::Error};
@@ -41,26 +40,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let listener = TcpListener::bind(&server).await?;
     info!("Server listening on {}", &server);
 
-    // 定时刷新固件数据
-    let fw_data_all = Arc::new(Mutex::new(Vec::new()));
-
-    // 复制一个变量
-    let _fw_data_all = Arc::clone(&fw_data_all);
-    tokio::spawn(async move {
-        refresh_firmware_data(&fw_server.clone(), _fw_data_all).await;
-    });
-
     loop {
         // 接受一个新的客户端连接
         let (socket, _) = listener.accept().await?;
 
-        // 复制一个变量
-        let _fw_data_all = Arc::clone(&fw_data_all);
+        // 复制原子变量
+        // let _fw_data_all = Arc::clone(&fw_data_all);
         let _fw_db = Arc::clone(&fw_db);
+
+        // 刷新固件列表
+        let _fw_data_all = Arc::new(read_all_fw_from_pg(&fw_server.clone()).await.unwrap());
 
         // 使用tokio的spawn函数，在独立的任务中处理每个客户端连接
         tokio::spawn(async move {
-            if let Err(error) = handle_client(socket, _fw_data_all, _fw_db).await {
+            if let Err(error) = handle_client(socket, &_fw_data_all, _fw_db).await {
                 error!("Error handling client: {}", error);
             }
         });

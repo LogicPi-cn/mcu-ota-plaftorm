@@ -4,7 +4,7 @@ use crc::{Crc, CRC_8_MAXIM_DOW};
 use firmware::models::firmware_data::FirmwareInfo;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
-use crate::{PKG_RX_FW_DATA, PKG_RX_FW_END, PKG_RX_FW_INFO};
+use crate::PackageType;
 
 // 发送固件信息
 pub async fn send_fw_query_info_pkg(
@@ -55,12 +55,12 @@ fn gen_fw_query_info_package(fw_info: &FirmwareInfo) -> Vec<u8> {
     // 包头
     let mut data: Vec<u8> = vec![
         0xAA,
-        0x55,                        // 包头
-        PKG_RX_FW_INFO,              // 包类型：固件查询
-        0x00,                        // 长度
-        0x02,                        // 长度
-        (fw_info.code >> 8) as u8,   // Code 高8位
-        (fw_info.code & 0xFF) as u8, // Code 低8位
+        0x55,                             // 包头
+        PackageType::FirmwareQuery as u8, // 包类型：固件查询
+        0x00,                             // 长度
+        0x02,                             // 长度
+        (fw_info.code >> 8) as u8,        // Code 高8位
+        (fw_info.code & 0xFF) as u8,      // Code 低8位
     ];
 
     // 计算crc
@@ -78,19 +78,19 @@ fn gen_fw_query_data_package(fw_info: &FirmwareInfo, index: u16, slice: u16) -> 
     // 包头
     let mut data: Vec<u8> = vec![
         0xAA,
-        0x55,                        // 包头
-        PKG_RX_FW_DATA,              // 包类型：固件请求
-        0x00,                        // Len 高8位
-        0x09,                        // Len 低8位
-        (fw_info.code >> 8) as u8,   // 固件代号 高8位
-        (fw_info.code & 0xFF) as u8, // 固件代号 低8位
-        fw_info.version.m as u8,     // 固件版本号 大
-        fw_info.version.n as u8,     // 固件版本号 中
-        fw_info.version.l as u8,     // 固件版本号 小
-        (index >> 8) as u8,          // index 高8位
-        (index & 0xFF) as u8,        // index 低8位
-        (slice >> 8) as u8,          // slice 高8位
-        (slice & 0xFF) as u8,        // slice 低8位
+        0x55,                                // 包头
+        PackageType::FirmwareDownload as u8, // 包类型：固件请求
+        0x00,                                // Len 高8位
+        0x09,                                // Len 低8位
+        (fw_info.code >> 8) as u8,           // 固件代号 高8位
+        (fw_info.code & 0xFF) as u8,         // 固件代号 低8位
+        fw_info.version.m as u8,             // 固件版本号 大
+        fw_info.version.n as u8,             // 固件版本号 中
+        fw_info.version.l as u8,             // 固件版本号 小
+        (index >> 8) as u8,                  // index 高8位
+        (index & 0xFF) as u8,                // index 低8位
+        (slice >> 8) as u8,                  // slice 高8位
+        (slice & 0xFF) as u8,                // slice 低8位
     ];
 
     // 计算crc
@@ -108,15 +108,15 @@ fn gen_fw_query_end_package(fw_info: &FirmwareInfo) -> Vec<u8> {
     // 包头
     let mut data: Vec<u8> = vec![
         0xAA,
-        0x55,                        // 包头
-        PKG_RX_FW_END,               // 包类型：结束
-        0x00,                        // 长度
-        0x05,                        // 长度
-        (fw_info.code >> 8) as u8,   // Code 高8位
-        (fw_info.code & 0xFF) as u8, // Code 低8位
-        fw_info.version.m as u8,     // 版本号 大
-        fw_info.version.n as u8,     // 版本号 中
-        fw_info.version.l as u8,     // 版本号 小
+        0x55,                           // 包头
+        PackageType::DownloadEnd as u8, // 包类型：结束
+        0x00,                           // 长度
+        0x05,                           // 长度
+        (fw_info.code >> 8) as u8,      // Code 高8位
+        (fw_info.code & 0xFF) as u8,    // Code 低8位
+        fw_info.version.m as u8,        // 版本号 大
+        fw_info.version.n as u8,        // 版本号 中
+        fw_info.version.l as u8,        // 版本号 小
     ];
 
     // 计算crc
