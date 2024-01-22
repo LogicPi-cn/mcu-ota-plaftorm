@@ -27,6 +27,7 @@ services:
   pg:
     image: logicpi/firmware:0.2.0
     container_name: mcu-ota-pg
+    command: postgres -c 'max_connections=1000'
     # environment:
     #   - POSTGRES_USER=craftor
     #   - POSTGRES_PASSWORD=3.1415926
