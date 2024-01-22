@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use base64::{engine::general_purpose, Engine};
-use log::{debug, error};
+use log::{debug, error, info};
 use reqwest::Error;
 use tokio::{
     sync::Mutex,
@@ -57,6 +57,7 @@ pub async fn refresh_firmware_data(fw_server: &str, fw_data_all: Arc<Mutex<Vec<F
     let refresh_duration = Duration::from_secs(1 * 60);
 
     loop {
+        info!("Refresh All FirmwareData ....");
         // 读取固件数据
         let new_data = read_all_fw_from_pg(&fw_server).await;
 
@@ -65,8 +66,6 @@ pub async fn refresh_firmware_data(fw_server: &str, fw_data_all: Arc<Mutex<Vec<F
                 // 更新全局变量
                 let mut fw_data_all = fw_data_all.lock().await;
                 *fw_data_all = new_data;
-
-                debug!("Refreshed");
             }
             Err(e) => {
                 error!("Error:{}", e);

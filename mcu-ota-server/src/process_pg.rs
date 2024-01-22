@@ -118,7 +118,7 @@ async fn proces_fw_query_request(
     code: i32,
     fw_data_all: &Vec<FirmwareData>,
 ) -> Result<(), Box<dyn Error>> {
-    debug!("[Command] Query Firmware Info.");
+    info!("[Command] Query Firmware Info.");
     if let Some(fw_data) = find_latest_fw(&fw_data_all, code) {
         send_fw_info(
             &FirmwareInfo {
@@ -149,7 +149,7 @@ async fn proces_fw_download_request(
     _code: i32,
     fw_data_all: &Vec<FirmwareData>,
 ) -> Result<(), Box<dyn Error>> {
-    debug!("[Command] Download Firmware.");
+    info!("[Command] Download Firmware.");
 
     let _version: FirmwareVersion = FirmwareVersion {
         m: request[7] as i32,
@@ -166,7 +166,7 @@ async fn proces_fw_download_request(
         match data {
             Some(data) => {
                 // 发送固件数据
-                debug!(
+                info!(
                     "Sending Firmware Data -> index:{}, slice:{}, len:{}",
                     _index,
                     _slice,
@@ -211,7 +211,7 @@ async fn proces_fw_end_request(
     _fw_data_all: &Vec<FirmwareData>,
     pool: DbPool,
 ) -> Result<(), Box<dyn Error>> {
-    debug!("[Command] Download Firmware Over.");
+    info!("[Command] Download Firmware Over.");
 
     let _version: FirmwareVersion = FirmwareVersion {
         m: request[7] as i32,

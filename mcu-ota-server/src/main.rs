@@ -28,7 +28,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
     println!("OTA Server for IoT Devices, Version: {}", version);
 
     // set log level
-    env::set_var("RUST_APP_LOG", "debug");
+    env::set_var("RUST_APP_LOG", "info");
     pretty_env_logger::init_custom_env("RUST_APP_LOG");
 
     // parameters
