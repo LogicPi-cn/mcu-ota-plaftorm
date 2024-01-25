@@ -1480,22 +1480,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 
 [[package]]
-name = "mcu-ota-server"
-version = "0.2.4"
-dependencies = [
- "clap 4.4.18",
- "crc",
- "log 0.4.20",
- "ota-database",
- "pretty_env_logger",
- "rand 0.8.5",
- "regex",
- "reqwest",
- "serde",
- "tokio",
-]
-
-[[package]]
 name = "md-5"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1748,6 +1732,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "ota-backend"
+version = "0.3.0"
+dependencies = [
+ "actix-files",
+ "actix-rt",
+ "actix-web",
+ "chrono",
+ "clap 4.4.18",
+ "diesel",
+ "env_logger 0.11.0",
+ "log 0.4.20",
+ "ota-database",
+ "pretty_env_logger",
+ "regex",
+ "serde",
+ "serde_json",
+ "sqlx",
+ "tokio",
+]
+
+[[package]]
 name = "ota-database"
 version = "0.3.0"
 dependencies = [
@@ -1774,23 +1779,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "ota-file-server"
-version = "0.2.0"
+name = "ota-server"
+version = "0.3.0"
 dependencies = [
- "actix-files",
- "actix-rt",
- "actix-web",
- "chrono",
  "clap 4.4.18",
- "diesel",
- "env_logger 0.11.0",
+ "crc",
  "log 0.4.20",
  "ota-database",
  "pretty_env_logger",
+ "rand 0.8.5",
  "regex",
+ "reqwest",
  "serde",
- "serde_json",
- "sqlx",
  "tokio",
 ]
 

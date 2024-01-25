@@ -1,8 +1,8 @@
 version: '3.8'
 services:
-  ota-file-server:
-    image: logicpi/ota-file-server:0.2.0
-    container_name: ota-file-server
+  ota-backend:
+    image: logicpi/ota-backend:0.3.0
+    container_name: ota-backend
     ports:
       - 20000:20000
     environment:
@@ -12,25 +12,22 @@ services:
     depends_on:
       - pg
 
-  mcu-ota-server:
-    image: logicpi/mcu-ota-server:0.2.4
-    container_name: mcu-ota-server
+  ota-server:
+    image: logicpi/ota-server:0.3.0
+    container_name: ota-server
     ports:
       - 9999:9999
     environment:
       - FW_SERVER=http://ota-file-server:20000
       - FW_DB=postgres://craftor:3.1415926@pg:5432/firmware
     depends_on:
-      - ota-file-server
-      - pg
+      - ota-backend
+      - ota-database
 
-  pg:
+  ota-database:
     image: logicpi/ota-database:0.3.0
-    container_name: mcu-ota-pg
+    container_name: ota-database 
     command: postgres -c 'max_connections=1000'
-    # environment:
-    #   - POSTGRES_USER=craftor
-    #   - POSTGRES_PASSWORD=3.1415926
     volumes:
       - pgdata:/var/lib/postgresql/data
 
