@@ -4,7 +4,7 @@
 docker login
 
 # 定义白名单数组
-whitelist=("ota-database" "mcu-ota-server" "ota-file-server")
+whitelist=("ota-database" "ota-server" "ota-backend")
 
 # 遍历工作区中的每个应用
 for dir in $(find . -maxdepth 1 -type d ! -name ".*" ! -name "target" -print); do

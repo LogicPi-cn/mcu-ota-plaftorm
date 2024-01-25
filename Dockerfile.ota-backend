@@ -49,11 +49,11 @@ RUN mkdir -p /app/ftp
 # 环境变量
 
 # 复制编译后的应用程序到新的工作目录
-COPY --from=builder /app/target/release/ota-file-server .
+COPY --from=builder /app/target/release/ota-backend .
 
 ENV FW_DB=postgres://craftor:3.1415926@localhost:50000/firmware
 
 EXPOSE 20000/tcp
 
 # 在容器中运行项目
-CMD ["./ota-file-server", "--fw-path", "/app/ftp", "--port", "20000"]
+CMD ["./ota-backend", "--port", "20000"]

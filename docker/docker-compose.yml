@@ -6,11 +6,9 @@ services:
     ports:
       - 20000:20000
     environment:
-      - FW_DB=postgres://craftor:3.1415926@pg:5432/firmware
-    volumes:
-      - /home/craftor/ftp/fw:/app/ftp
+      - FW_DB=postgres://craftor:3.1415926@ota-database:5432/firmware
     depends_on:
-      - pg
+      - ota-database
 
   ota-server:
     image: logicpi/ota-server:0.3.0
@@ -18,8 +16,8 @@ services:
     ports:
       - 9999:9999
     environment:
-      - FW_SERVER=http://ota-file-server:20000
-      - FW_DB=postgres://craftor:3.1415926@pg:5432/firmware
+      - FW_SERVER=http://ota-backend:20000
+      - FW_DB=postgres://craftor:3.1415926@ota-database:5432/firmware
     depends_on:
       - ota-backend
       - ota-database
