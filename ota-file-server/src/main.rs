@@ -1,8 +1,8 @@
 use actix_web::{middleware, web, App, HttpServer};
 use clap::Parser;
 
-use firmware::{routes::firmware_data::apis, Database};
 use log::info;
+use ota_database::{routes::firmware_data::apis, Database};
 use ota_file_server::args::Cli;
 use std::env;
 

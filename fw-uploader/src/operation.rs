@@ -1,5 +1,5 @@
-use firmware::models::firmware_data::{FirmwareData, NewFirmwareData, UpdateFirmwareData};
 use log::info;
+use ota_database::models::firmware_data::{FirmwareData, NewFirmwareData, UpdateFirmwareData};
 
 /// 更新固件
 pub async fn update_firmware(server: &str, id: i32, updated_fw: &UpdateFirmwareData) {

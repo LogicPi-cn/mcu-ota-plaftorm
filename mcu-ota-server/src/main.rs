@@ -1,8 +1,8 @@
 use clap::Parser;
-use firmware::from_pg::read_all_fw_from_pg;
-use firmware::Database;
 use log::{error, info};
 use mcu_ota_server::{args::Cli, process_pg::handle_client};
+use ota_database::from_pg::read_all_fw_from_pg;
+use ota_database::Database;
 use tokio::sync::Mutex;
 
 use std::sync::Arc;

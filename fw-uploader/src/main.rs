@@ -1,6 +1,6 @@
 use base64::Engine;
 use clap::Parser;
-use firmware::models::firmware_data::{
+use ota_database::models::firmware_data::{
     find_firmware, find_latest_fw, FirmwareVersion, NewFirmwareData, UpdateFirmwareData,
 };
 

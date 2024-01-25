@@ -13,7 +13,7 @@ reqwest = { version = "0.11", features = [
     "multipart",
 ] }
 clap = { version = "4.4.18", features = ["derive"] }
-firmware = { path = "../firmware" }
+ota-database = { path = "../ota-database" }
 base64 = "0.21.7"
 log = "0.4.20"
 pretty_env_logger = "0.5.0"

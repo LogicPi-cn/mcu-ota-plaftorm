@@ -3,7 +3,7 @@ mod tests {
 
     use crate::basic::{_EndpointFunctions, _init_env, _test_endpoints, create_pool};
 
-    use firmware::{
+    use ota_database::{
         controls::upgrade_history,
         models::upgrade_history::{NewUpgradeHistory, UpdateUpgradeHistory, UpgradeHistory},
     };

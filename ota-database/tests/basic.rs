@@ -3,9 +3,9 @@ use actix_http::Request;
 use actix_web::body::BoxBody;
 use actix_web::dev::{HttpServiceFactory, Service, ServiceResponse};
 use actix_web::http::Error;
-use firmware::models::basic::HasId;
-use firmware::DbPool;
 use log::debug;
+use ota_database::models::basic::HasId;
+use ota_database::DbPool;
 use std::sync::Once;
 
 use actix_web::{body, test, web, App};

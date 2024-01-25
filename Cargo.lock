@@ -883,32 +883,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8fcfdc7a0362c9f4444381a9e697c79d435fe65b52a37466fc2c1184cee9edc6"
 
 [[package]]
-name = "firmware"
-version = "0.2.3"
-dependencies = [
- "actix-http",
- "actix-rt",
- "actix-web",
- "base64 0.21.7",
- "chrono",
- "clap 4.4.18",
- "crc",
- "diesel",
- "dotenv",
- "env_logger 0.11.0",
- "log 0.4.20",
- "pretty_env_logger",
- "r2d2",
- "rand 0.8.5",
- "regex",
- "reqwest",
- "serde",
- "serde_derive",
- "serde_json",
- "tokio",
-]
-
-[[package]]
 name = "flate2"
 version = "1.0.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1044,9 +1018,9 @@ dependencies = [
  "base64 0.21.7",
  "chrono",
  "clap 4.4.18",
- "firmware",
  "log 0.4.20",
  "logger",
+ "ota-database",
  "pretty_env_logger",
  "reqwest",
  "tokio",
@@ -1511,8 +1485,8 @@ version = "0.2.4"
 dependencies = [
  "clap 4.4.18",
  "crc",
- "firmware",
  "log 0.4.20",
+ "ota-database",
  "pretty_env_logger",
  "rand 0.8.5",
  "regex",
@@ -1774,6 +1748,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "ota-database"
+version = "0.3.0"
+dependencies = [
+ "actix-http",
+ "actix-rt",
+ "actix-web",
+ "base64 0.21.7",
+ "chrono",
+ "clap 4.4.18",
+ "crc",
+ "diesel",
+ "dotenv",
+ "env_logger 0.11.0",
+ "log 0.4.20",
+ "pretty_env_logger",
+ "r2d2",
+ "rand 0.8.5",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tokio",
+]
+
+[[package]]
 name = "ota-file-server"
 version = "0.2.0"
 dependencies = [
@@ -1784,8 +1784,8 @@ dependencies = [
  "clap 4.4.18",
  "diesel",
  "env_logger 0.11.0",
- "firmware",
  "log 0.4.20",
+ "ota-database",
  "pretty_env_logger",
  "regex",
  "serde",

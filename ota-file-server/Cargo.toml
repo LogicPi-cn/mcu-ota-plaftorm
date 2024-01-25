@@ -20,8 +20,7 @@ sqlx = { version = "0.7.3", features = [
     "tls-rustls",
 ] }
 serde_json = "1.0.111"
-
-firmware = { path = "../firmware" }
+ota-database = { path = "../ota-database" }
 env_logger = "0.11.0"
 chrono = "0.4.31"
 actix-rt = "2.9.0"

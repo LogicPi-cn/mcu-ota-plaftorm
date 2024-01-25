@@ -1,7 +1,7 @@
 use std::error::Error;
 
 use crc::{Crc, CRC_8_MAXIM_DOW};
-use firmware::models::firmware_data::FirmwareInfo;
+use ota_database::models::firmware_data::FirmwareInfo;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 
 use crate::PackageType;

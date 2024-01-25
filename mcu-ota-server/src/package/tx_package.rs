@@ -1,5 +1,5 @@
 use crc::{Crc, CRC_8_MAXIM_DOW};
-use firmware::models::firmware_data::FirmwareInfo;
+use ota_database::models::firmware_data::FirmwareInfo;
 use std::error::Error;
 use tokio::{io::AsyncWriteExt, net::TcpStream};
 

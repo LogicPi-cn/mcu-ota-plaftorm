@@ -1,6 +1,21 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    config_history (id) {
+        id -> Int4,
+        group_id -> Int4,
+        op_code -> Int4,
+        sync_ts -> Timestamp,
+        interval -> Int4,
+        t_max -> Int4,
+        t_min -> Int4,
+        human -> Bool,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     firmware_data (id) {
         id -> Int4,
         fwcode -> Int4,
@@ -30,6 +45,7 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
+    config_history,
     firmware_data,
     upgrade_history,
 );

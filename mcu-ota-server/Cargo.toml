@@ -16,4 +16,4 @@ regex = "1.10.2"
 rand = "0.8.5"
 serde = { version = "1.0.195", features = ["serde_derive"] }
 
-firmware = { path = "../firmware" }
+ota-database = { path = "../ota-database" }

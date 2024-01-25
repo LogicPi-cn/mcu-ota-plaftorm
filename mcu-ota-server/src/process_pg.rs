@@ -1,4 +1,5 @@
-use firmware::{
+use log::{debug, error, info};
+use ota_database::{
     models::{
         basic::CrudOperations,
         firmware_data::{
@@ -9,7 +10,6 @@ use firmware::{
     },
     Database, DbPool,
 };
-use log::{debug, error, info};
 use std::{error::Error, sync::Arc};
 use tokio::{io::AsyncReadExt, net::TcpStream, sync::Mutex};
 
