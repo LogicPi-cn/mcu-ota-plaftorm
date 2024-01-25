@@ -30,7 +30,13 @@ pub async fn handle_client(
 
     loop {
         // 从客户端读取数据
-        let bytes_read = socket.read(&mut buffer).await.unwrap();
+        let bytes_read = match socket.read(&mut buffer).await {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                error!("Socket Error :{}", e);
+                break;
+            }
+        };
 
         // 客户端关闭连接
         if bytes_read == 0 {
