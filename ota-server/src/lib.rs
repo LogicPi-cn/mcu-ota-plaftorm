@@ -4,9 +4,10 @@ pub mod process_pg;
 
 #[derive(Debug, Clone, Copy)]
 pub enum PackageType {
-    FirmwareQuery = 0xA1,
-    FirmwareDownload = 0xA2,
-    DownloadEnd = 0xA3,
+    FirmwareQuery = 0xA1,    // 固件查询
+    FirmwareDownload = 0xA2, // 固件下载
+    DownloadEnd = 0xA3,      // 下载结束
+    QueryConfig = 0xA4,      // 参数查询
 }
 
 impl PackageType {

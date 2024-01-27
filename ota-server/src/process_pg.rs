@@ -61,6 +61,7 @@ pub async fn handle_client(
     Ok(())
 }
 
+/// 数据包处理入口
 async fn package_process(
     request: &[u8],
     socket: &mut TcpStream,
@@ -89,14 +90,15 @@ async fn package_process(
             // 根据包类型处理请求
             match package_type {
                 PackageType::FirmwareQuery => {
-                    proces_fw_query_request(request, socket, _code as i32, fw_data_all).await?
+                    process_fw_query_request(request, socket, _code as i32, fw_data_all).await?
                 }
                 PackageType::FirmwareDownload => {
-                    proces_fw_download_request(request, socket, _code as i32, fw_data_all).await?
+                    process_fw_download_request(request, socket, _code as i32, fw_data_all).await?
                 }
                 PackageType::DownloadEnd => {
-                    proces_fw_end_request(request, socket, _code as i32, fw_data_all, pool).await?
+                    process_fw_end_request(request, socket, _code as i32, fw_data_all, pool).await?
                 }
+                PackageType::QueryConfig => process_query_config(request, socket).await?,
             };
         } else {
             // CRC失败
@@ -112,8 +114,18 @@ async fn package_process(
     Ok(())
 }
 
-// 处理固件查询请求
-async fn proces_fw_query_request(
+/// 配置查询
+async fn process_query_config(
+    _request: &[u8],
+    _socket: &mut TcpStream,
+) -> Result<(), Box<dyn Error>> {
+    info!("[Command] Query Configuration.");
+    // TODO
+    Ok(())
+}
+
+/// 处理固件查询请求
+async fn process_fw_query_request(
     _request: &[u8],
     socket: &mut TcpStream,
     code: i32,
@@ -143,8 +155,8 @@ async fn proces_fw_query_request(
     Ok(())
 }
 
-// 处理固件下载请求
-async fn proces_fw_download_request(
+/// 处理固件下载请求
+async fn process_fw_download_request(
     request: &[u8],
     socket: &mut TcpStream,
     _code: i32,
@@ -204,8 +216,8 @@ async fn proces_fw_download_request(
     Ok(())
 }
 
-// 处理固件结束请求
-async fn proces_fw_end_request(
+/// 处理固件结束请求
+async fn process_fw_end_request(
     request: &[u8],
     _socket: &mut TcpStream,
     _code: i32,

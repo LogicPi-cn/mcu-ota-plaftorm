@@ -1,6 +1,6 @@
 [package]
 name = "ota-server"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -17,3 +17,4 @@ rand = "0.8.5"
 serde = { version = "1.0.195", features = ["serde_derive"] }
 
 ota-database = { path = "../ota-database" }
+chrono = { version = "0.4.33", features = ["serde"] }
