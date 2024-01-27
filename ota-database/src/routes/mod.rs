@@ -1,1 +1,1 @@
-pub mod firmware_data;
+pub mod total;

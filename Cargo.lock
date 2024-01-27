@@ -1754,7 +1754,7 @@ dependencies = [
 
 [[package]]
 name = "ota-database"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "actix-http",
  "actix-rt",
