@@ -1,9 +1,9 @@
 use crate::{
+    db::DbPool,
     models::{
         basic::CrudOperations,
         firmware_data::{FirmwareData, NewFirmwareData, UpdateFirmwareData},
     },
-    DbPool,
 };
 
 use actix_web::{delete, get, patch, post, web, Error, HttpResponse};

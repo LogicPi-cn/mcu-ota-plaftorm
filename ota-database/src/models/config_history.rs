@@ -1,9 +1,9 @@
 use std::fmt;
 
 use crate::{
+    db::DbError,
     models::basic::{CrudOperations, HasId},
     schema::config_history,
-    DbError,
 };
 use chrono::{NaiveDateTime, Utc};
 use diesel::{AsChangeset, Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl};

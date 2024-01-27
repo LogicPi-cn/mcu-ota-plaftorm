@@ -1,7 +1,7 @@
 use diesel::PgConnection;
 use rand::{distributions::*, thread_rng, Rng};
 
-use crate::DbError;
+use crate::db::DbError;
 
 pub fn random_string(len: usize) -> String {
     let rand_string: String = thread_rng()

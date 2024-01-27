@@ -1,9 +1,9 @@
 use crate::{
+    db::DbPool,
     models::{
         basic::CrudOperations,
         upgrade_history::{NewUpgradeHistory, UpdateUpgradeHistory, UpgradeHistory},
     },
-    DbPool,
 };
 
 use actix_web::{delete, get, patch, post, web, Error, HttpResponse};

@@ -1,9 +1,9 @@
 use crate::{
+    db::DbPool,
     models::{
         basic::CrudOperations,
         config_history::{ConfigHistory, NewConfigHistory, UpdateConfigHistory},
     },
-    DbPool,
 };
 
 use actix_web::{delete, get, patch, post, web, Error, HttpResponse};

@@ -2,18 +2,15 @@ use log::{debug, error, info};
 use ota_database::{
     from_pg::{get_latest_config, read_config_from_pg},
     models::{
-        basic::CrudOperations,
-        config_history::ConfigHistory,
         firmware_data::{
             find_firmware, find_latest_fw, slice_fw_data_from_vector, FirmwareData, FirmwareInfo,
             FirmwareVersion,
         },
-        upgrade_history::{NewUpgradeHistory, UpgradeHistory},
+        upgrade_history::NewUpgradeHistory,
     },
-    Database, DbPool,
 };
-use std::{error::Error, sync::Arc};
-use tokio::{io::AsyncReadExt, net::TcpStream, sync::Mutex};
+use std::error::Error;
+use tokio::{io::AsyncReadExt, net::TcpStream};
 
 use crate::{
     package::{common::package_check, tx_package::*},
@@ -25,7 +22,6 @@ pub async fn handle_client(
     mut socket: TcpStream,
     fw_data_all: &Vec<FirmwareData>,
     fw_server: &str,
-    db: Arc<Mutex<Database>>,
 ) -> Result<(), Box<dyn Error>> {
     info!("New client connected: {:?}", socket.peer_addr()?);
 
@@ -49,11 +45,7 @@ pub async fn handle_client(
         // 处理接收到的数据
         let request = &buffer[..bytes_read].to_vec();
 
-        // 处理数据包
-        // package_process(request, &mut socket, &fw_data_all, &pool).await?;
-        let conn = &db.lock().await.pool;
-
-        package_process(request, &mut socket, &fw_data_all, &fw_server, &conn).await?;
+        package_process(request, &mut socket, &fw_data_all, &fw_server).await?;
 
         // 清空缓冲区
         buffer.fill(0);
@@ -70,7 +62,6 @@ async fn package_process(
     socket: &mut TcpStream,
     fw_data_all: &Vec<FirmwareData>,
     fw_server: &str,
-    pool: &DbPool,
 ) -> Result<(), Box<dyn Error>> {
     // 最低长度为7
     if request.len() >= 4 {
@@ -104,7 +95,7 @@ async fn package_process(
                 PackageType::DownloadEnd => {
                     // 固件代号
                     let _code = (request[5] as u16) << 8 | request[6] as u16;
-                    process_fw_end_request(request, socket, _code as i32, fw_data_all, pool).await?
+                    process_fw_end_request(request, socket, _code as i32, fw_data_all).await?
                 }
                 PackageType::QueryConfig => {
                     process_query_config(request, socket, fw_server).await?
@@ -252,7 +243,6 @@ async fn process_fw_end_request(
     _socket: &mut TcpStream,
     _code: i32,
     _fw_data_all: &Vec<FirmwareData>,
-    pool: &DbPool,
 ) -> Result<(), Box<dyn Error>> {
     info!("[Command] Download Firmware Over.");
 
@@ -290,15 +280,15 @@ async fn process_fw_end_request(
     };
 
     // 插入数据库
-    let mut conn = pool.get()?;
-    match UpgradeHistory::create(new_history.clone(), &mut conn) {
-        Ok(_) => {
-            info!("Add upgrade histroy success. {}", new_history);
-        }
-        Err(e) => {
-            error!("Add upgrade histroy failed. {}", e);
-        }
-    }
+    // let mut conn = pool.get()?;
+    // match UpgradeHistory::create(new_history.clone(), &mut conn) {
+    //     Ok(_) => {
+    //         info!("Add upgrade histroy success. {}", new_history);
+    //     }
+    //     Err(e) => {
+    //         error!("Add upgrade histroy failed. {}", e);
+    //     }
+    // }
 
     Ok(())
 }

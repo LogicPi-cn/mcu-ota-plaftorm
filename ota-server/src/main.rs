@@ -1,9 +1,7 @@
 use clap::Parser;
 use log::{error, info};
 use ota_database::from_pg::read_all_fw_from_pg;
-use ota_database::Database;
 use ota_server::{args::Cli, process_pg::handle_client};
-use tokio::sync::Mutex;
 
 use std::sync::Arc;
 use std::{env, error::Error};
@@ -36,22 +34,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let fw_server =
         Arc::new(env::var("FW_SERVER").unwrap_or_else(|_| (cli.fw_server.clone()).to_string()));
     let port = env::var("PORT").unwrap_or_else(|_| (cli.port.clone() as u32).to_string());
-    let fw_db = Arc::new(env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone()));
 
     // Create a listener
     let server = format!("0.0.0.0:{}", port);
     let listener = TcpListener::bind(&server).await?;
     info!("Server listening on {}", &server);
 
-    // Initialize database
-    let db = Arc::new(Mutex::new(Database::new(&fw_db)));
-
     loop {
         // 接受一个新的客户端连接
         let (socket, _) = listener.accept().await?;
 
         // 原子变量引用
-        let db_clone = Arc::clone(&db);
         let fw_server_clone = Arc::clone(&fw_server);
 
         // 刷新固件列表
@@ -59,9 +52,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
         // 使用tokio的spawn函数，在独立的任务中处理每个客户端连接
         tokio::spawn(async move {
-            if let Err(error) =
-                handle_client(socket, &_fw_data_all, &fw_server_clone, db_clone).await
-            {
+            if let Err(error) = handle_client(socket, &_fw_data_all, &fw_server_clone).await {
                 error!("Error handling client: {}", error);
             }
         });

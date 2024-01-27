@@ -3,7 +3,7 @@ use clap::Parser;
 
 use log::info;
 use ota_backend::args::Cli;
-use ota_database::{routes::firmware_data::apis, Database};
+use ota_database::{db::Database, routes::firmware_data::apis};
 use std::env;
 
 /// LogicPi Logo
