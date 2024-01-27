@@ -95,7 +95,8 @@ async fn package_process(
                 PackageType::DownloadEnd => {
                     // 固件代号
                     let _code = (request[5] as u16) << 8 | request[6] as u16;
-                    process_fw_end_request(request, socket, _code as i32, fw_data_all).await?
+                    process_fw_end_request(request, socket, _code as i32, fw_data_all, fw_server)
+                        .await?
                 }
                 PackageType::QueryConfig => {
                     process_query_config(request, socket, fw_server).await?
@@ -243,6 +244,7 @@ async fn process_fw_end_request(
     _socket: &mut TcpStream,
     _code: i32,
     _fw_data_all: &Vec<FirmwareData>,
+    fw_server: &str,
 ) -> Result<(), Box<dyn Error>> {
     info!("[Command] Download Firmware Over.");
 
@@ -279,16 +281,27 @@ async fn process_fw_end_request(
         success,
     };
 
-    // 插入数据库
-    // let mut conn = pool.get()?;
-    // match UpgradeHistory::create(new_history.clone(), &mut conn) {
-    //     Ok(_) => {
-    //         info!("Add upgrade histroy success. {}", new_history);
-    //     }
-    //     Err(e) => {
-    //         error!("Add upgrade histroy failed. {}", e);
-    //     }
-    // }
+    // 插入数据库（固件升级记录）
+    push_new_history(fw_server, &new_history).await;
 
     Ok(())
+}
+
+/// 上传固件升级成功历史记录
+pub async fn push_new_history(server: &str, new_data: &NewUpgradeHistory) {
+    let client = reqwest::Client::new();
+    let res = client.post(server).json(&new_data).send().await;
+
+    match res {
+        Ok(response) => {
+            if response.status().is_success() {
+                info!("Upgrade history added successfully");
+            } else {
+                info!("Failed to upload upgrade_history: {}", response.status());
+            }
+        }
+        Err(e) => {
+            info!("Failed to upload upgrade_history: {}", e);
+        }
+    }
 }
