@@ -50,7 +50,7 @@ pub async fn send_fw_end(
 }
 
 /// 发送配置数据
-pub async fn send_config(
+pub async fn send_config_pkg(
     last_config: &ConfigHistory,
     socket: &mut TcpStream,
 ) -> Result<(), Box<dyn Error>> {

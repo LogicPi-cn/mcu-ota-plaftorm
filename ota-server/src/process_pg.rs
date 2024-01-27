@@ -1,7 +1,9 @@
 use log::{debug, error, info};
 use ota_database::{
+    from_pg::{get_latest_config, read_config_from_pg},
     models::{
         basic::CrudOperations,
+        config_history::ConfigHistory,
         firmware_data::{
             find_firmware, find_latest_fw, slice_fw_data_from_vector, FirmwareData, FirmwareInfo,
             FirmwareVersion,
@@ -22,6 +24,7 @@ use crate::{
 pub async fn handle_client(
     mut socket: TcpStream,
     fw_data_all: &Vec<FirmwareData>,
+    fw_server: &str,
     db: Arc<Mutex<Database>>,
 ) -> Result<(), Box<dyn Error>> {
     info!("New client connected: {:?}", socket.peer_addr()?);
@@ -50,7 +53,7 @@ pub async fn handle_client(
         // package_process(request, &mut socket, &fw_data_all, &pool).await?;
         let conn = &db.lock().await.pool;
 
-        package_process(request, &mut socket, &fw_data_all, &conn).await?;
+        package_process(request, &mut socket, &fw_data_all, &fw_server, &conn).await?;
 
         // 清空缓冲区
         buffer.fill(0);
@@ -66,20 +69,19 @@ async fn package_process(
     request: &[u8],
     socket: &mut TcpStream,
     fw_data_all: &Vec<FirmwareData>,
+    fw_server: &str,
     pool: &DbPool,
 ) -> Result<(), Box<dyn Error>> {
     // 最低长度为7
-    if request.len() >= 7 {
+    if request.len() >= 4 {
         // CRC检查
         if package_check(request, request.len()) {
-            // 固件代号
-            let _code = (request[5] as u16) << 8 | request[6] as u16;
-
             // 从请求中获取包类型
             let package_type = match request[2] {
                 x if x == PackageType::FirmwareQuery as u8 => PackageType::FirmwareQuery,
                 x if x == PackageType::FirmwareDownload as u8 => PackageType::FirmwareDownload,
                 x if x == PackageType::DownloadEnd as u8 => PackageType::DownloadEnd,
+                x if x == PackageType::QueryConfig as u8 => PackageType::QueryConfig,
                 _ => {
                     error!("Unknown package type!");
                     send_failed_package(socket, ErrorCode::UnknownPackageType as u8).await?;
@@ -90,15 +92,23 @@ async fn package_process(
             // 根据包类型处理请求
             match package_type {
                 PackageType::FirmwareQuery => {
+                    // 固件代号
+                    let _code = (request[5] as u16) << 8 | request[6] as u16;
                     process_fw_query_request(request, socket, _code as i32, fw_data_all).await?
                 }
                 PackageType::FirmwareDownload => {
+                    // 固件代号
+                    let _code = (request[5] as u16) << 8 | request[6] as u16;
                     process_fw_download_request(request, socket, _code as i32, fw_data_all).await?
                 }
                 PackageType::DownloadEnd => {
+                    // 固件代号
+                    let _code = (request[5] as u16) << 8 | request[6] as u16;
                     process_fw_end_request(request, socket, _code as i32, fw_data_all, pool).await?
                 }
-                PackageType::QueryConfig => process_query_config(request, socket).await?,
+                PackageType::QueryConfig => {
+                    process_query_config(request, socket, fw_server).await?
+                }
             };
         } else {
             // CRC失败
@@ -117,10 +127,30 @@ async fn package_process(
 /// 配置查询
 async fn process_query_config(
     _request: &[u8],
-    _socket: &mut TcpStream,
+    socket: &mut TcpStream,
+    fw_server: &str,
 ) -> Result<(), Box<dyn Error>> {
     info!("[Command] Query Configuration.");
-    // TODO
+
+    let all_config_history = read_config_from_pg(fw_server).await;
+
+    match all_config_history {
+        Ok(datas) => {
+            let last_config_history = get_latest_config(&datas);
+            match last_config_history {
+                Some(config) => {
+                    send_config_pkg(config, socket).await?;
+                }
+                None => {
+                    send_failed_package(socket, ErrorCode::NoFirmwareFound as u8).await?;
+                }
+            }
+        }
+        Err(e) => {
+            error!("Error:{}", e);
+        }
+    }
+
     Ok(())
 }
 

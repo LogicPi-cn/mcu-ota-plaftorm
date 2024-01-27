@@ -21,7 +21,7 @@ impl Database {
         let manager = ConnectionManager::<PgConnection>::new(db_url);
         let pool: DbPool = r2d2::Pool::builder()
             .min_idle(Some(5)) // 最小空闲连接数
-            .max_size(5) // 最大连接数
+            .max_size(10) // 最大连接数
             .connection_timeout(std::time::Duration::from_secs(30))
             .build(manager)
             .expect("Failed to create pool.");

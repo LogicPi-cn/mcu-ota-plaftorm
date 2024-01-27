@@ -8,7 +8,50 @@ use tokio::{
     time::{self, Duration},
 };
 
-use crate::models::firmware_data::FirmwareData;
+use crate::models::{config_history::ConfigHistory, firmware_data::FirmwareData};
+
+/// 获取最新的配置
+pub fn get_latest_config(configs: &Vec<ConfigHistory>) -> Option<&ConfigHistory> {
+    configs.iter().max_by_key(|config| config.id)
+}
+
+/// 从postgres数据库读取所有配置
+pub async fn read_config_from_pg(fw_server: &str) -> Result<Vec<ConfigHistory>, Error> {
+    let client = reqwest::Client::new();
+    let response = client.get(format!("{}/config", fw_server)).send().await;
+
+    let mut result_data: Vec<ConfigHistory> = Vec::new();
+
+    match response {
+        Ok(response) => {
+            let all_datas: Vec<ConfigHistory> = response.json().await?;
+            debug!("Found {} config history", all_datas.len());
+
+            for one_data in all_datas {
+                debug!("Get... {}", one_data);
+                let new_data = ConfigHistory {
+                    id: one_data.id,
+                    group_id: one_data.group_id,
+                    op_code: one_data.op_code,
+                    sync_ts: one_data.sync_ts,
+                    interval: one_data.interval,
+                    t_max: one_data.t_max,
+                    t_min: one_data.t_min,
+                    human: one_data.human,
+                    created_at: one_data.created_at,
+                    updated_at: one_data.updated_at,
+                };
+
+                result_data.push(new_data);
+            }
+        }
+        Err(e) => {
+            error!("Error:{}, fw_server={}", e, fw_server);
+        }
+    }
+
+    Ok(result_data)
+}
 
 /// 从postgres数据库读取所有固件
 pub async fn read_all_fw_from_pg(fw_server: &str) -> Result<Vec<FirmwareData>, Error> {
