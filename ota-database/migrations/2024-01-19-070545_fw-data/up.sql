@@ -12,7 +12,6 @@ CREATE TABLE IF NOT EXISTS firmware_data (
     updated_at    TIMESTAMP NOT NULL DEFAULT(NOW())  -- COMMENT '更新时间',
 );
 
-
 CREATE TABLE IF NOT EXISTS upgrade_history (
     id            SERIAL PRIMARY KEY,
     sn            INTEGER   NOT NULL,
@@ -37,4 +36,12 @@ CREATE TABLE IF NOT EXISTS config_history (
     human         BOOLEAN   NOT NULL,   -- 人体感应
     created_at    TIMESTAMP NOT NULL DEFAULT(NOW()), -- COMMENT '创建时间',
     updated_at    TIMESTAMP NOT NULL DEFAULT(NOW())  -- COMMENT '更新时间',
+);
+
+CREATE TABLE IF NOT EXISTS device_list (
+    id            SERIAL PRIMARY KEY,
+    device_id     BIGINT       NOT NULL,
+    device_name   VARCHAR(255) NOT NULL,
+    created_at    TIMESTAMP    NOT NULL DEFAULT(NOW()), -- COMMENT '创建时间',
+    updated_at    TIMESTAMP    NOT NULL DEFAULT(NOW())  -- COMMENT '更新时间',
 );
