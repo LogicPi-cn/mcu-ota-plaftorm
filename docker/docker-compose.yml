@@ -23,7 +23,7 @@ services:
       - ota-database
 
   ota-database:
-    image: logicpi/ota-database:0.3.1
+    image: logicpi/ota-database:0.3.2
     container_name: ota-database 
     command: postgres -c 'max_connections=1000'
     volumes:
