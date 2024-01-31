@@ -9,14 +9,14 @@ use chrono::{NaiveDateTime, Utc};
 use diesel::{AsChangeset, Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl};
 use serde_derive::{Deserialize, Serialize};
 
-use super::basic::{random_i32, random_i64};
+use super::basic::{random_i32, random_string};
 
 #[derive(Deserialize, Serialize, Queryable, Debug, AsChangeset, PartialEq, Default)]
 #[diesel(table_name = upgrade_history)]
 pub struct UpgradeHistory {
     pub id: i32,
-    pub sn: i32,
-    pub device_id: i64,
+    pub sn: String,
+    pub device_id: String,
     pub fwcode: i32,
     pub version_m: i32,
     pub version_n: i32,
@@ -37,8 +37,14 @@ impl fmt::Display for UpgradeHistory {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "UpgradeHistory -> sn:{:08X}, device_id:{:16X}, Code:{:04X}, Version:{}.{}.{}, Status:{}",
-            self.sn, self.device_id, self.fwcode, self.version_m, self.version_n, self.version_l, self.success
+            "UpgradeHistory -> sn:{}, device_id:{}, Code:{:04X}, Version:{}.{}.{}, Status:{}",
+            self.sn,
+            self.device_id,
+            self.fwcode,
+            self.version_m,
+            self.version_n,
+            self.version_l,
+            self.success
         )
     }
 }
@@ -46,8 +52,8 @@ impl fmt::Display for UpgradeHistory {
 #[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq, Clone)]
 #[diesel(table_name = upgrade_history)]
 pub struct NewUpgradeHistory {
-    pub sn: i32,
-    pub device_id: i64,
+    pub sn: String,
+    pub device_id: String,
     pub fwcode: i32,
     pub version_m: i32,
     pub version_n: i32,
@@ -58,8 +64,8 @@ pub struct NewUpgradeHistory {
 impl NewUpgradeHistory {
     pub fn random() -> Self {
         NewUpgradeHistory {
-            sn: random_i32(),
-            device_id: random_i64(),
+            sn: random_string(4),
+            device_id: random_string(8),
             fwcode: random_i32(),
             version_m: random_i32(),
             version_n: random_i32(),
@@ -74,8 +80,14 @@ impl fmt::Display for NewUpgradeHistory {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "UpgradeHistory -> sn:{:08X}, device_id:{:16X}, Code:{:04X}, Version:{}.{}.{}, Status:{}",
-            self.sn, self.device_id, self.fwcode, self.version_m, self.version_n, self.version_l, self.success
+            "UpgradeHistory -> sn:{}, device_id:{}, Code:{:04X}, Version:{}.{}.{}, Status:{}",
+            self.sn,
+            self.device_id,
+            self.fwcode,
+            self.version_m,
+            self.version_n,
+            self.version_l,
+            self.success
         )
     }
 }
@@ -83,8 +95,8 @@ impl fmt::Display for NewUpgradeHistory {
 #[derive(Debug, Deserialize, AsChangeset, Serialize, Default, Clone)]
 #[diesel(table_name = upgrade_history )]
 pub struct UpdateUpgradeHistory {
-    pub sn: i32,
-    pub device_id: i64,
+    pub sn: String,
+    pub device_id: String,
     pub fwcode: i32,
     pub version_m: i32,
     pub version_n: i32,
@@ -96,8 +108,8 @@ pub struct UpdateUpgradeHistory {
 impl UpdateUpgradeHistory {
     pub fn random() -> Self {
         UpdateUpgradeHistory {
-            sn: random_i32(),
-            device_id: random_i64(),
+            sn: random_string(4),
+            device_id: random_string(8),
             fwcode: random_i32(),
             version_m: random_i32(),
             version_n: random_i32(),
@@ -113,8 +125,14 @@ impl fmt::Display for UpdateUpgradeHistory {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "UpgradeHistory -> sn:{:08X}, device_id:{:16X}, Code:{:04X}, Version:{}.{}.{}, Status:{}",
-            self.sn, self.device_id, self.fwcode, self.version_m, self.version_n, self.version_l, self.success
+            "UpgradeHistory -> sn:{}, device_id:{}, Code:{:04X}, Version:{}.{}.{}, Status:{}",
+            self.sn,
+            self.device_id,
+            self.fwcode,
+            self.version_m,
+            self.version_n,
+            self.version_l,
+            self.success
         )
     }
 }

@@ -16,6 +16,17 @@ diesel::table! {
 }
 
 diesel::table! {
+    device_list (id) {
+        id -> Int4,
+        device_id -> Int8,
+        #[max_length = 255]
+        device_name -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
     firmware_data (id) {
         id -> Int4,
         fwcode -> Int4,
@@ -32,8 +43,10 @@ diesel::table! {
 diesel::table! {
     upgrade_history (id) {
         id -> Int4,
-        sn -> Int4,
-        device_id -> Int8,
+        #[max_length = 255]
+        sn -> Varchar,
+        #[max_length = 255]
+        device_id -> Varchar,
         fwcode -> Int4,
         version_m -> Int4,
         version_n -> Int4,
@@ -46,6 +59,7 @@ diesel::table! {
 
 diesel::allow_tables_to_appear_in_same_query!(
     config_history,
+    device_list,
     firmware_data,
     upgrade_history,
 );

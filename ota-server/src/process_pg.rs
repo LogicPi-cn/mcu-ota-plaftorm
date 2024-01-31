@@ -272,8 +272,8 @@ async fn process_fw_end_request(
     let success = request[22] == 0xA1;
 
     let new_history = NewUpgradeHistory {
-        sn,
-        device_id,
+        sn: format!("{:04X}", sn),
+        device_id: format!("{:08X}", device_id),
         fwcode: _code,
         version_m: request[7] as i32,
         version_n: request[8] as i32,
