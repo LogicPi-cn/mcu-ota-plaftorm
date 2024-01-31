@@ -17,5 +17,4 @@ ota-database = { path = "../ota-database" }
 base64 = "0.21.7"
 log = "0.4.20"
 pretty_env_logger = "0.5.0"
-logger = "0.4.0"
 chrono = "0.4.31"
