@@ -11,7 +11,7 @@ services:
       - ota-database
 
   ota-server:
-    image: logicpi/ota-server:0.4.1
+    image: logicpi/ota-server:0.4.2
     container_name: ota-server
     ports:
       - 9999:9999

@@ -1640,7 +1640,7 @@ dependencies = [
 
 [[package]]
 name = "ota-server"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "chrono",
  "clap 4.4.18",
