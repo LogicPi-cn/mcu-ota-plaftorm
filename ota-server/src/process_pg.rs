@@ -290,7 +290,11 @@ async fn process_fw_end_request(
 /// 上传固件升级成功历史记录
 pub async fn push_new_history(server: &str, new_data: &NewUpgradeHistory) {
     let client = reqwest::Client::new();
-    let res = client.post(server).json(&new_data).send().await;
+    let res = client
+        .post(format!("{}/history", server))
+        .json(&new_data)
+        .send()
+        .await;
 
     match res {
         Ok(response) => {
