@@ -23,7 +23,7 @@ mod tests {
         };
 
         _test_endpoints::<ConfigHistory, NewConfigHistory, UpdateConfigHistory, _, _, _, _, _>(
-            "/history",
+            "/config",
             pool.clone(),
             NewConfigHistory::random,
             UpdateConfigHistory::random,

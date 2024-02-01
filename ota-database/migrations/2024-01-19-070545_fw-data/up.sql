@@ -1,7 +1,7 @@
 -- Your SQL goes here
 
 CREATE TABLE IF NOT EXISTS firmware_data (
-    id            SERIAL PRIMARY KEY,
+    id            SERIAL    PRIMARY KEY,
     fwcode        INTEGER   NOT NULL,
     version_m     INTEGER   NOT NULL,
     version_n     INTEGER   NOT NULL,
@@ -15,18 +15,18 @@ CREATE TABLE IF NOT EXISTS firmware_data (
 CREATE TABLE IF NOT EXISTS upgrade_history (
     id            SERIAL PRIMARY KEY,
     sn            VARCHAR(255)   NOT NULL,
-    device_id     VARCHAR(255)    NOT NULL,
-    fwcode        INTEGER   NOT NULL,
-    version_m     INTEGER   NOT NULL,
-    version_n     INTEGER   NOT NULL,
-    version_l     INTEGER   NOT NULL,
-    success       BOOLEAN   NOT NULL,
-    created_at    TIMESTAMP NOT NULL DEFAULT(NOW()), -- COMMENT '创建时间',
-    updated_at    TIMESTAMP NOT NULL DEFAULT(NOW())  -- COMMENT '更新时间',
+    device_id     VARCHAR(255)   NOT NULL,
+    fwcode        INTEGER        NOT NULL,
+    version_m     INTEGER        NOT NULL,
+    version_n     INTEGER        NOT NULL,
+    version_l     INTEGER        NOT NULL,
+    success       BOOLEAN        NOT NULL,
+    created_at    TIMESTAMP      NOT NULL DEFAULT(NOW()), -- COMMENT '创建时间',
+    updated_at    TIMESTAMP      NOT NULL DEFAULT(NOW())  -- COMMENT '更新时间',
 );
 
 CREATE TABLE IF NOT EXISTS config_history (
-    id            SERIAL PRIMARY KEY,
+    id            SERIAL    PRIMARY KEY,
     group_id      INTEGER   NOT NULL,   -- 分组id
     op_code       INTEGER   NOT NULL,   -- 操作码
     sync_ts       TIMESTAMP NOT NULL,   -- 同步时间
@@ -39,9 +39,19 @@ CREATE TABLE IF NOT EXISTS config_history (
 );
 
 CREATE TABLE IF NOT EXISTS device_list (
-    id            SERIAL PRIMARY KEY,
+    id            SERIAL       PRIMARY KEY,
     device_id     BIGINT       NOT NULL,
     device_name   VARCHAR(255) NOT NULL,
+    created_at    TIMESTAMP    NOT NULL DEFAULT(NOW()), -- COMMENT '创建时间',
+    updated_at    TIMESTAMP    NOT NULL DEFAULT(NOW())  -- COMMENT '更新时间',
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id            SERIAL       PRIMARY KEY,
+    first_name    TEXT         NOT NULL,
+    last_name     TEXT         NOT NULL,
+    email         TEXT         NOT NULL,
+    phone         TEXT         NOT NULL,
     created_at    TIMESTAMP    NOT NULL DEFAULT(NOW()), -- COMMENT '创建时间',
     updated_at    TIMESTAMP    NOT NULL DEFAULT(NOW())  -- COMMENT '更新时间',
 );
