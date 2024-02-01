@@ -1,6 +1,6 @@
 [package]
 name = "ota-backend"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -21,7 +21,10 @@ sqlx = { version = "0.7.3", features = [
 ] }
 serde_json = "1.0.111"
 ota-database = { path = "../ota-database" }
-env_logger = "0.11.0"
+env_logger = "0.11.1"
 chrono = "0.4.31"
 actix-rt = "2.9.0"
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "r2d2"] }
+futures-util = "0.3.30"
+jsonwebtoken = "9.2.0"
+futures = "0.3.30"

@@ -1,6 +1,7 @@
 use actix_web::{middleware, web, App, HttpServer};
 use clap::Parser;
 
+use env_logger::Env;
 use log::info;
 use ota_backend::args::Cli;
 use ota_database::{db::Database, routes::total::apis};
@@ -25,11 +26,8 @@ async fn main() -> std::io::Result<()> {
     let version = env!("CARGO_PKG_VERSION");
     println!("OTA File Server, Version: {}", version);
 
-    // set log level
-    env::set_var("RUST_LOG", "debug");
-    pretty_env_logger::init_custom_env("RUST_LOG");
+    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
 
-    let _fw_path = env::var("FW_PATH").unwrap_or_else(|_| cli.fw_path.clone());
     let _fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone());
     let _port = env::var("PORT").unwrap_or_else(|_| (cli.port as u32).to_string());
 
@@ -38,7 +36,6 @@ async fn main() -> std::io::Result<()> {
     // Create a listener
     let server = format!("0.0.0.0:{}", _port);
     info!("Server listening on {}", &server);
-    info!("Firmware Storage Dir: {}", &_fw_path);
 
     HttpServer::new(move || {
         App::new()
