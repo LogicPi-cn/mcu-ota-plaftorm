@@ -2,7 +2,7 @@ use minio::s3::args::{BucketExistsArgs, MakeBucketArgs, UploadObjectArgs};
 use minio::s3::client::Client;
 use minio::s3::creds::StaticProvider;
 use minio::s3::http::BaseUrl;
-use minio_api::{ACCESS_KEY, MINIO_SERVER, SECRET_KEY};
+use minio_api::{ACCESS_KEY, BUCKET_NAME, MINIO_SERVER, SECRET_KEY};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -18,18 +18,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     )
     .unwrap();
 
-    let bucket_name = "ota-files";
-
     // Check 'asiatrip' bucket exist or not.
     let exists = client
-        .bucket_exists(&BucketExistsArgs::new(&bucket_name).unwrap())
+        .bucket_exists(&BucketExistsArgs::new(&BUCKET_NAME).unwrap())
         .await
         .unwrap();
 
     // Make 'asiatrip' bucket if not exist.
     if !exists {
         client
-            .make_bucket(&MakeBucketArgs::new(&bucket_name).unwrap())
+            .make_bucket(&MakeBucketArgs::new(&BUCKET_NAME).unwrap())
             .await
             .unwrap();
     }
@@ -39,7 +37,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     client
         .upload_object(
             &mut UploadObjectArgs::new(
-                &bucket_name,
+                &BUCKET_NAME,
                 "1987-0.2.0.bin",
                 "/root/proj/mcu-ota-platform/file/1987-0.2.0.bin",
             )
@@ -48,6 +46,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .await
         .unwrap();
 
-    println!("'/home/user/Photos/asiaphotos.zip' is successfully uploaded as object 'asiaphotos-2015.zip' to bucket 'asiatrip'.");
+    println!("successfully uploaded");
     Ok(())
 }
