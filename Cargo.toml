@@ -1,4 +1,4 @@
 
 [workspace]
-members = ["ota-server", "ota-backend", "ota-database", "fw-uploader"]
+members = ["ota-server", "ota-backend", "ota-database", "fw-uploader", "baiduyun-api"]
 resolver = "2"
