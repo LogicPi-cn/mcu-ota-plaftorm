@@ -1,5 +1,4 @@
 pub mod args;
-pub mod middle;
 
 /// LogicPi Logo
 pub const LOGO: &str = r"

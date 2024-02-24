@@ -3,15 +3,13 @@ use actix_web::middleware::Logger;
 use actix_web::{http::header, web, App, HttpServer};
 use clap::Parser;
 use dotenv::dotenv;
-use ota_backend::middle::app_state::AppState;
-use ota_backend::middle::config::Config;
-use ota_backend::middle::handler;
+
 use ota_backend::LOGO;
 
 use log::info;
 use ota_backend::args::Cli;
+use ota_database::db::Config;
 use ota_database::{db::Database, routes::total::apis};
-use sqlx::postgres::PgPoolOptions;
 use std::env;
 
 #[actix_web::main]
@@ -36,21 +34,6 @@ async fn main() -> std::io::Result<()> {
     let _port = env::var("PORT").unwrap_or_else(|_| (cli.port as u32).to_string());
     let _db = Database::new(&_fw_db);
 
-    let pool = match PgPoolOptions::new()
-        .max_connections(10)
-        .connect(&config.database_url)
-        .await
-    {
-        Ok(pool) => {
-            println!("✅Connection to the database is successful!");
-            pool
-        }
-        Err(err) => {
-            println!("🔥 Failed to connect to the database: {:?}", err);
-            std::process::exit(1);
-        }
-    };
-
     // Create a listener
     let server = format!("0.0.0.0:{}", _port);
     info!("Server listening on {}", &server);
@@ -66,11 +49,10 @@ async fn main() -> std::io::Result<()> {
             ])
             .supports_credentials();
         App::new()
-            .configure(handler::config)
             .wrap(cors)
             .wrap(Logger::default())
-            .app_data(web::Data::new(AppState {
-                db: pool.clone(),
+            .app_data(web::Data::new(Database {
+                pool: _db.pool.clone(),
                 env: config.clone(),
             }))
             .service(apis())
