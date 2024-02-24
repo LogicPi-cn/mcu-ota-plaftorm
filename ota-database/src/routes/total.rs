@@ -33,11 +33,11 @@ fn config_history(path: &str) -> Scope {
 
 fn user(path: &str) -> Scope {
     let result = web::scope(path)
-        .service(user::index)
+        // .service(user::index)
         .service(user::create)
-        .service(user::find)
-        .service(user::update)
-        .service(user::delete)
+        // .service(user::find)
+        // .service(user::update)
+        // .service(user::delete)
         .service(user::register)
         .service(user::login)
         .service(user::logout);

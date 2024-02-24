@@ -7,50 +7,21 @@ use diesel::{
 };
 use serde_derive::{Deserialize, Serialize};
 
-use super::basic::{random_string, HasId};
+use super::basic::random_string;
 
 #[derive(Deserialize, Serialize, Queryable, Debug, AsChangeset, PartialEq, Default)]
 #[diesel(table_name = users)]
 pub struct User {
-    pub id: i32,
+    pub id: uuid::Uuid,
     pub name: String,
     pub email: String,
-    pub phone: String,
+    pub phone: Option<String>,
     pub password: String,
-    pub role: String,
-    pub photo: String,
+    pub role: Option<String>,
+    pub photo: Option<String>,
     pub verified: bool,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
-}
-
-impl HasId for User {
-    fn id(&self) -> i32 {
-        self.id
-    }
-}
-
-#[derive(Debug, Serialize)]
-pub struct FilteredUser {
-    pub id: String,
-    pub name: String,
-    pub email: String,
-    pub role: String,
-    pub photo: String,
-    pub verified: bool,
-    pub created_at: NaiveDateTime,
-    pub updated_at: NaiveDateTime,
-}
-
-#[derive(Serialize, Debug)]
-pub struct UserData {
-    pub user: FilteredUser,
-}
-
-#[derive(Serialize, Debug)]
-pub struct UserResponse {
-    pub status: String,
-    pub data: UserData,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -76,11 +47,7 @@ pub struct LoginUserSchema {
 /// 格式化打印
 impl fmt::Display for User {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "User -> Name:{}, Email:{}, Phone:{}",
-            self.name, self.email, self.phone
-        )
+        write!(f, "User -> Name:{}, Email:{}", self.name, self.email)
     }
 }
 
@@ -149,15 +116,15 @@ impl fmt::Display for UpdateUser {
 }
 
 impl User {
-    pub fn all(conn: &mut PgConnection) -> Result<Vec<User>, DbError> {
-        let items = users::table.load::<Self>(conn)?;
-        Ok(items)
-    }
+    // pub fn all(conn: &mut PgConnection) -> Result<Vec<User>, DbError> {
+    //     let items = users::table.load::<Self>(conn)?;
+    //     Ok(items)
+    // }
 
-    pub fn find(target_id: i32, conn: &mut PgConnection) -> Result<User, DbError> {
-        let result = users::table.find(target_id).first::<User>(conn)?;
-        Ok(result)
-    }
+    // pub fn find(target_id: i32, conn: &mut PgConnection) -> Result<User, DbError> {
+    //     let result = users::table.find(target_id).first::<User>(conn)?;
+    //     Ok(result)
+    // }
 
     pub fn find_by_email(target_email: &str, conn: &mut PgConnection) -> Result<User, DbError> {
         let result = users::table
@@ -174,18 +141,18 @@ impl User {
         Ok(result)
     }
 
-    pub fn update(id: i32, data: UpdateUser, conn: &mut PgConnection) -> Result<User, DbError> {
-        let result = diesel::update(users::table.find(id))
-            .set(&data)
-            .get_result(conn)
-            .expect("Error on Update");
-        Ok(result)
-    }
+    // pub fn update(id: i32, data: UpdateUser, conn: &mut PgConnection) -> Result<User, DbError> {
+    //     let result = diesel::update(users::table.find(id))
+    //         .set(&data)
+    //         .get_result(conn)
+    //         .expect("Error on Update");
+    //     Ok(result)
+    // }
 
-    pub fn delete(id: i32, conn: &mut PgConnection) -> Result<usize, DbError> {
-        let num_deleted = diesel::delete(users::table.find(id))
-            .execute(conn)
-            .expect("Error on Delete");
-        Ok(num_deleted)
-    }
+    // pub fn delete(id: i32, conn: &mut PgConnection) -> Result<usize, DbError> {
+    //     let num_deleted = diesel::delete(users::table.find(id))
+    //         .execute(conn)
+    //         .expect("Error on Delete");
+    //     Ok(num_deleted)
+    // }
 }

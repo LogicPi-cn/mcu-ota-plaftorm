@@ -46,15 +46,19 @@ CREATE TABLE IF NOT EXISTS device_list (
     updated_at    TIMESTAMP    NOT NULL DEFAULT(NOW())  -- COMMENT '更新时间',
 );
 
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 CREATE TABLE IF NOT EXISTS users (
-    id            SERIAL       PRIMARY KEY,
-    name          TEXT         NOT NULL,
-    email         TEXT         NOT NULL,
-    phone         TEXT         NOT NULL,
-    password      TEXT         NOT NULL,
-    role          TEXT         NOT NULL,
-    photo         TEXT         NOT NULL,
+    id UUID NOT NULL PRIMARY KEY DEFAULT (uuid_generate_v4()), 
+    name          VARCHAR(100) NOT NULL,
+    email         VARCHAR(100) NOT NULL,
+    phone         VARCHAR(20),
+    password      VARCHAR(100) NOT NULL,
+    role          VARCHAR(100),
+    photo         VARCHAR(20),
     verified      BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at    TIMESTAMP    NOT NULL DEFAULT(NOW()), -- COMMENT '创建时间',
     updated_at    TIMESTAMP    NOT NULL DEFAULT(NOW())  -- COMMENT '更新时间',
 );
+
+CREATE INDEX users_email_idx ON users (email);

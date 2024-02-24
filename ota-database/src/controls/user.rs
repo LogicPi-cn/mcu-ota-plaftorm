@@ -16,17 +16,17 @@ use chrono::{prelude::*, Duration};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde_json::json;
 
-#[get("")]
-pub async fn index(data: web::Data<Database>) -> Result<HttpResponse, Error> {
-    let tweets = web::block(move || {
-        let mut conn = data.pool.get()?;
-        User::all(&mut conn)
-    })
-    .await?
-    .map_err(actix_web::error::ErrorInternalServerError)?;
+// #[get("")]
+// pub async fn index(data: web::Data<Database>) -> Result<HttpResponse, Error> {
+//     let tweets = web::block(move || {
+//         let mut conn = data.pool.get()?;
+//         User::all(&mut conn)
+//     })
+//     .await?
+//     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Ok().json(tweets))
-}
+//     Ok(HttpResponse::Ok().json(tweets))
+// }
 
 #[post("")]
 pub async fn create(
@@ -43,48 +43,48 @@ pub async fn create(
     Ok(HttpResponse::Ok().json(data))
 }
 
-#[get("/{id}")]
-pub async fn find(id: web::Path<i32>, data: web::Data<Database>) -> Result<HttpResponse, Error> {
-    let data = web::block(move || {
-        let mut conn = data.pool.get()?;
-        User::find(id.into_inner(), &mut conn)
-    })
-    .await?
-    .map_err(actix_web::error::ErrorInternalServerError)?;
+// #[get("/{id}")]
+// pub async fn find(id: web::Path<i32>, data: web::Data<Database>) -> Result<HttpResponse, Error> {
+//     let data = web::block(move || {
+//         let mut conn = data.pool.get()?;
+//         User::find(id.into_inner(), &mut conn)
+//     })
+//     .await?
+//     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Ok().json(data))
-}
+//     Ok(HttpResponse::Ok().json(data))
+// }
 
-#[patch("/{id}")]
-pub async fn update(
-    id: web::Path<i32>,
-    payload: web::Json<UpdateUser>,
-    data: web::Data<Database>,
-) -> Result<HttpResponse, Error> {
-    let user = web::block(move || {
-        let mut conn = data.pool.get()?;
-        User::update(id.into_inner(), payload.into_inner(), &mut conn)
-    })
-    .await?
-    .map_err(actix_web::error::ErrorInternalServerError)?;
+// #[patch("/{id}")]
+// pub async fn update(
+//     id: web::Path<i32>,
+//     payload: web::Json<UpdateUser>,
+//     data: web::Data<Database>,
+// ) -> Result<HttpResponse, Error> {
+//     let user = web::block(move || {
+//         let mut conn = data.pool.get()?;
+//         User::update(id.into_inner(), payload.into_inner(), &mut conn)
+//     })
+//     .await?
+//     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Ok().json(user))
-}
+//     Ok(HttpResponse::Ok().json(user))
+// }
 
-#[delete("/{id}")]
-pub async fn delete(id: web::Path<i32>, data: web::Data<Database>) -> Result<HttpResponse, Error> {
-    let result = web::block(move || {
-        let mut conn = data.pool.get()?;
-        User::delete(id.into_inner(), &mut conn)
-    })
-    .await?
-    .map(|data| HttpResponse::Ok().json(data))
-    .map_err(actix_web::error::ErrorInternalServerError)?;
+// #[delete("/{id}")]
+// pub async fn delete(id: web::Path<i32>, data: web::Data<Database>) -> Result<HttpResponse, Error> {
+//     let result = web::block(move || {
+//         let mut conn = data.pool.get()?;
+//         User::delete(id.into_inner(), &mut conn)
+//     })
+//     .await?
+//     .map(|data| HttpResponse::Ok().json(data))
+//     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(result)
-}
+//     Ok(result)
+// }
 
-#[post("/register")]
+#[post("/auth/register")]
 async fn register(
     body: web::Json<RegisterUserSchema>,
     data: web::Data<Database>,
@@ -129,7 +129,7 @@ async fn register(
     Ok(HttpResponse::Ok().json(user_response))
 }
 
-#[post("/login")]
+#[post("/auth/login")]
 async fn login(
     body: web::Json<LoginUserSchema>,
     data: web::Data<Database>,
@@ -178,15 +178,15 @@ async fn login(
     })))
 }
 
-#[get("/logout")]
-async fn logout(_: jwt_auth::JwtMiddleware) -> impl Responder {
+#[get("/auth/logout")]
+async fn logout(_: jwt_auth::JwtMiddleware) -> Result<HttpResponse, Error> {
     let cookie = Cookie::build("token", "")
         .path("/")
         .max_age(ActixWebDuration::new(-1, 0))
         .http_only(true)
         .finish();
 
-    HttpResponse::Ok().cookie(cookie).json(json!({
+    Ok(HttpResponse::Ok().cookie(cookie).json(json!({
         "status": "success"
-    }))
+    })))
 }
