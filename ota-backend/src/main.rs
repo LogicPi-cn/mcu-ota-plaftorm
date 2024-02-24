@@ -1,46 +1,78 @@
-use actix_web::{middleware, web, App, HttpServer};
+use actix_cors::Cors;
+use actix_web::middleware::Logger;
+use actix_web::{http::header, web, App, HttpServer};
 use clap::Parser;
+use dotenv::dotenv;
+use ota_backend::middle::app_state::AppState;
+use ota_backend::middle::config::Config;
+use ota_backend::middle::handler;
+use ota_backend::LOGO;
 
-use env_logger::Env;
 use log::info;
 use ota_backend::args::Cli;
 use ota_database::{db::Database, routes::total::apis};
+use sqlx::postgres::PgPoolOptions;
 use std::env;
-
-/// LogicPi Logo
-const LOGO: &str = r"
-    __    ____   ______ ____ ______ ____   ____
-   / /   / __ \ / ____//  _// ____// __ \ /  _/
-  / /   / / / // / __  / / / /    / /_/ / / /  
- / /___/ /_/ // /_/ /_/ / / /___ / ____/_/ /   
-/_____/\____/ \____//___/ \____//_/    /___/   
-";
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Get Parameters
     let cli = Cli::parse();
 
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "actix_web=debug");
+    }
+    dotenv().ok();
+    env_logger::init();
+
+    let config = Config::init();
+
     // print logo
     println!("{}", LOGO);
     let version = env!("CARGO_PKG_VERSION");
     println!("OTA File Server, Version: {}", version);
 
-    env_logger::Builder::from_env(Env::default().default_filter_or("debug")).init();
-
     let _fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone());
     let _port = env::var("PORT").unwrap_or_else(|_| (cli.port as u32).to_string());
+    let _db = Database::new(&_fw_db);
 
-    let db = Database::new(&_fw_db);
+    let pool = match PgPoolOptions::new()
+        .max_connections(10)
+        .connect(&config.database_url)
+        .await
+    {
+        Ok(pool) => {
+            println!("✅Connection to the database is successful!");
+            pool
+        }
+        Err(err) => {
+            println!("🔥 Failed to connect to the database: {:?}", err);
+            std::process::exit(1);
+        }
+    };
 
     // Create a listener
     let server = format!("0.0.0.0:{}", _port);
     info!("Server listening on {}", &server);
 
     HttpServer::new(move || {
+        let cors = Cors::default()
+            .allowed_origin("http://localhost:3000")
+            .allowed_methods(vec!["GET", "POST"])
+            .allowed_headers(vec![
+                header::CONTENT_TYPE,
+                header::AUTHORIZATION,
+                header::ACCEPT,
+            ])
+            .supports_credentials();
         App::new()
-            .wrap(middleware::Logger::default())
-            .app_data(web::Data::new(db.clone().pool))
+            .configure(handler::config)
+            .wrap(cors)
+            .wrap(Logger::default())
+            .app_data(web::Data::new(AppState {
+                db: pool.clone(),
+                env: config.clone(),
+            }))
             .service(apis())
     })
     .bind(server)?

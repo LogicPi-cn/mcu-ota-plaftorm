@@ -14,11 +14,7 @@ log = "0.4.20"
 pretty_env_logger = "0.5.0"
 clap = { version = "4.4.12", features = ["derive"] }
 regex = "1.10.2"
-sqlx = { version = "0.7.3", features = [
-    "postgres",
-    "runtime-tokio",
-    "tls-rustls",
-] }
+
 serde_json = "1.0.111"
 ota-database = { path = "../ota-database" }
 env_logger = "0.11.1"
@@ -28,3 +24,14 @@ diesel = { version = "2.1.4", features = ["postgres", "chrono", "r2d2"] }
 futures-util = "0.3.30"
 jsonwebtoken = "9.2.0"
 futures = "0.3.30"
+actix-cors = "0.7.0"
+argon2 = "0.5.3"
+dotenv = "0.15.0"
+rand_core = { version = "0.6.4", features = ["std"] }
+sqlx = { version = "0.7.3", features = [
+    "runtime-async-std-native-tls",
+    "postgres",
+    "chrono",
+    "uuid",
+] }
+uuid = { version = "1.2.2", features = ["serde", "v4"] }

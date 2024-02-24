@@ -16,6 +16,6 @@ pub struct Cli {
     pub fw_db: String,
 
     /// Listing Port
-    #[clap(long, default_value = "20000")]
+    #[clap(long, default_value = "8000")]
     pub port: u32,
 }
