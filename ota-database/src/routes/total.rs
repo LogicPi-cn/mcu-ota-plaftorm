@@ -37,7 +37,10 @@ fn user(path: &str) -> Scope {
         .service(user::create)
         .service(user::find)
         .service(user::update)
-        .service(user::delete);
+        .service(user::delete)
+        .service(user::register)
+        .service(user::login)
+        .service(user::logout);
     return result;
 }
 

@@ -60,10 +60,13 @@ diesel::table! {
 diesel::table! {
     users (id) {
         id -> Int4,
-        first_name -> Text,
-        last_name -> Text,
+        name -> Text,
         email -> Text,
         phone -> Text,
+        password -> Text,
+        role -> Text,
+        photo -> Text,
+        verified -> Bool,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }

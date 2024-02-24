@@ -22,6 +22,21 @@ chrono = { version = "0.4.31", features = ["serde"] }
 diesel = { version = "2.1.4", features = ["postgres", "chrono", "r2d2"] }
 serde_derive = "1.0.152"
 dotenv = { version = "0.15.0", features = ["clap"] }
+actix-files = "0.6.5"
+env_logger = "0.11.1"
+futures-util = "0.3.30"
+jsonwebtoken = "9.2.0"
+futures = "0.3.30"
+actix-cors = "0.7.0"
+argon2 = "0.5.3"
+rand_core = { version = "0.6.4", features = ["std"] }
+sqlx = { version = "0.7.3", features = [
+    "runtime-async-std-native-tls",
+    "postgres",
+    "chrono",
+    "uuid",
+] }
+uuid = { version = "1.2.2", features = ["serde", "v4"] }
 
 
 [dev-dependencies]

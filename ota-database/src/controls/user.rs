@@ -1,12 +1,20 @@
 use crate::{
-    db::DbPool,
-    models::{
-        basic::CrudOperations,
-        user::{NewUser, UpdateUser, User},
-    },
+    db::{Database, DbPool},
+    middleware::jwt_auth,
+    models::user::{LoginUserSchema, NewUser, RegisterUserSchema, TokenClaims, UpdateUser, User},
 };
 
-use actix_web::{delete, get, patch, post, web, Error, HttpResponse};
+use actix_web::{
+    cookie::{time::Duration as ActixWebDuration, Cookie},
+    delete, get, patch, post, web, Error, HttpResponse, Responder,
+};
+use argon2::{
+    password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
+    Argon2,
+};
+use chrono::{prelude::*, Duration};
+use jsonwebtoken::{encode, EncodingKey, Header};
+use serde_json::json;
 
 #[get("")]
 pub async fn index(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
@@ -53,14 +61,14 @@ pub async fn update(
     payload: web::Json<UpdateUser>,
     pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, Error> {
-    let tweet = web::block(move || {
+    let user = web::block(move || {
         let mut conn = pool.get()?;
         User::update(id.into_inner(), payload.into_inner(), &mut conn)
     })
     .await?
     .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Ok().json(tweet))
+    Ok(HttpResponse::Ok().json(user))
 }
 
 #[delete("/{id}")]
@@ -74,4 +82,111 @@ pub async fn delete(id: web::Path<i32>, pool: web::Data<DbPool>) -> Result<HttpR
     .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(result)
+}
+
+#[post("/register")]
+async fn register(
+    body: web::Json<RegisterUserSchema>,
+    pool: web::Data<DbPool>,
+) -> Result<HttpResponse, Error> {
+    let mut conn = pool.get().expect("Couldn't get DB connection");
+
+    let exists = User::find_by_email(&body.email.to_string().to_lowercase(), &mut conn);
+
+    match exists {
+        Ok(_) => {
+            return Ok(HttpResponse::Conflict().json(json!({
+                "status": "fail",
+                "message": "User with that email already exists"
+            })));
+        }
+        _ => {
+            // continue with registration
+        }
+    }
+
+    let salt = SaltString::generate(&mut OsRng);
+    let hashed_password = Argon2::default()
+        .hash_password(body.password.as_bytes(), &salt)
+        .expect("Error while hashing password")
+        .to_string();
+
+    let new_user = NewUser {
+        name: body.name.to_string(),
+        email: body.email.to_string().to_lowercase(),
+        password: hashed_password,
+    };
+
+    let user = User::create(new_user, &mut conn).expect("Error inserting new user");
+
+    let user_response = json!({
+        "status": "success",
+        "data": {
+            "user": user,
+        }
+    });
+
+    Ok(HttpResponse::Ok().json(user_response))
+}
+
+#[post("/login")]
+async fn login(
+    body: web::Json<LoginUserSchema>,
+    pool: web::Data<Database>,
+) -> Result<HttpResponse, Error> {
+    let mut conn = pool.pool.get().expect("Couldn't get DB connection");
+
+    let user = User::find_by_email(&body.email.to_string().to_lowercase(), &mut conn).unwrap();
+
+    let parsed_hash = PasswordHash::new(&user.password).unwrap();
+
+    match Argon2::default().verify_password(body.password.as_bytes(), &parsed_hash) {
+        Ok(_) => {}
+        Err(_) => {
+            return Ok(HttpResponse::BadRequest().json(json!({
+                "status": "fail",
+                "message": "Invalid email or password"
+            })));
+        }
+    };
+
+    let now = Utc::now();
+    let iat = now.timestamp() as usize;
+    let exp = (now + Duration::minutes(60)).timestamp() as usize;
+    let claims: TokenClaims = TokenClaims {
+        sub: user.id.to_string(),
+        exp,
+        iat,
+    };
+
+    let token = encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(pool.env.jwt_secret.as_ref()),
+    )
+    .unwrap();
+
+    let cookie = Cookie::build("token", token.to_owned())
+        .path("/")
+        .max_age(ActixWebDuration::new(60 * 60, 0))
+        .http_only(true)
+        .finish();
+
+    Ok(HttpResponse::Ok().cookie(cookie).json(json!({
+        "status": "success",
+        "token": token
+    })))
+}
+
+#[get("/logout")]
+async fn logout(_: jwt_auth::JwtMiddleware) -> impl Responder {
+    let cookie = Cookie::build("token", "")
+        .path("/")
+        .max_age(ActixWebDuration::new(-1, 0))
+        .http_only(true)
+        .finish();
+
+    HttpResponse::Ok().cookie(cookie).json(json!({
+        "status": "success"
+    }))
 }

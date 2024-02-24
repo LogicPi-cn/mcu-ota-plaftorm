@@ -48,10 +48,13 @@ CREATE TABLE IF NOT EXISTS device_list (
 
 CREATE TABLE IF NOT EXISTS users (
     id            SERIAL       PRIMARY KEY,
-    first_name    TEXT         NOT NULL,
-    last_name     TEXT         NOT NULL,
+    name          TEXT         NOT NULL,
     email         TEXT         NOT NULL,
     phone         TEXT         NOT NULL,
+    password      TEXT         NOT NULL,
+    role          TEXT         NOT NULL,
+    photo         TEXT         NOT NULL,
+    verified      BOOLEAN      NOT NULL DEFAULT FALSE,
     created_at    TIMESTAMP    NOT NULL DEFAULT(NOW()), -- COMMENT '创建时间',
     updated_at    TIMESTAMP    NOT NULL DEFAULT(NOW())  -- COMMENT '更新时间',
 );

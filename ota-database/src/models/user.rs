@@ -1,24 +1,25 @@
 use std::fmt;
 
-use crate::{
-    db::DbError,
-    models::basic::{CrudOperations, HasId},
-    schema::users,
-};
+use crate::{db::DbError, schema::users};
 use chrono::{NaiveDateTime, Utc};
-use diesel::{AsChangeset, Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl};
+use diesel::{
+    AsChangeset, ExpressionMethods, Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl,
+};
 use serde_derive::{Deserialize, Serialize};
 
-use super::basic::random_string;
+use super::basic::{random_string, HasId};
 
 #[derive(Deserialize, Serialize, Queryable, Debug, AsChangeset, PartialEq, Default)]
 #[diesel(table_name = users)]
 pub struct User {
     pub id: i32,
-    pub first_name: String,
-    pub last_name: String,
+    pub name: String,
     pub email: String,
     pub phone: String,
+    pub password: String,
+    pub role: String,
+    pub photo: String,
+    pub verified: bool,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
 }
@@ -29,13 +30,56 @@ impl HasId for User {
     }
 }
 
+#[derive(Debug, Serialize)]
+pub struct FilteredUser {
+    pub id: String,
+    pub name: String,
+    pub email: String,
+    pub role: String,
+    pub photo: String,
+    pub verified: bool,
+    pub created_at: NaiveDateTime,
+    pub updated_at: NaiveDateTime,
+}
+
+#[derive(Serialize, Debug)]
+pub struct UserData {
+    pub user: FilteredUser,
+}
+
+#[derive(Serialize, Debug)]
+pub struct UserResponse {
+    pub status: String,
+    pub data: UserData,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TokenClaims {
+    pub sub: String,
+    pub iat: usize,
+    pub exp: usize,
+}
+
+#[derive(Debug, Deserialize, PartialEq, Eq)]
+pub struct RegisterUserSchema {
+    pub name: String,
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct LoginUserSchema {
+    pub email: String,
+    pub password: String,
+}
+
 /// 格式化打印
 impl fmt::Display for User {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "User -> FirstName:{}, LastName:{}, Email:{}, Phone:{}",
-            self.first_name, self.last_name, self.email, self.phone
+            "User -> Name:{}, Email:{}, Phone:{}",
+            self.name, self.email, self.phone
         )
     }
 }
@@ -43,19 +87,17 @@ impl fmt::Display for User {
 #[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq, Clone)]
 #[diesel(table_name = users)]
 pub struct NewUser {
-    pub first_name: String,
-    pub last_name: String,
+    pub name: String,
     pub email: String,
-    pub phone: String,
+    pub password: String,
 }
 
 impl NewUser {
     pub fn random() -> Self {
         NewUser {
-            first_name: random_string(10),
-            last_name: random_string(10),
+            name: random_string(10),
             email: random_string(10),
-            phone: random_string(10),
+            password: random_string(10),
         }
     }
 }
@@ -63,31 +105,33 @@ impl NewUser {
 /// 格式化打印
 impl fmt::Display for NewUser {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "User -> FirstName:{}, LastName:{}, Email:{}, Phone:{}",
-            self.first_name, self.last_name, self.email, self.phone
-        )
+        write!(f, "User -> Name:{}, Email:{}", self.name, self.email)
     }
 }
 
 #[derive(Debug, Deserialize, AsChangeset, Serialize, Default, Clone)]
 #[diesel(table_name = users )]
 pub struct UpdateUser {
-    pub first_name: String,
-    pub last_name: String,
+    pub name: String,
     pub email: String,
     pub phone: String,
+    pub password: String,
+    pub role: String,
+    pub photo: String,
+    pub verified: bool,
     pub updated_at: Option<NaiveDateTime>,
 }
 
 impl UpdateUser {
     pub fn random() -> Self {
         UpdateUser {
-            first_name: random_string(10),
-            last_name: random_string(10),
+            name: random_string(10),
             email: random_string(10),
             phone: random_string(10),
+            password: random_string(10),
+            role: random_string(10),
+            photo: random_string(10),
+            verified: false,
             updated_at: Some(Utc::now().naive_utc()),
         }
     }
@@ -98,24 +142,31 @@ impl fmt::Display for UpdateUser {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "User -> FirstName:{}, LastName:{}, Email:{}, Phone:{}",
-            self.first_name, self.last_name, self.email, self.phone
+            "User -> Name:{}, Email:{}, Phone:{}",
+            self.name, self.email, self.phone
         )
     }
 }
 
-impl CrudOperations<User, NewUser, UpdateUser> for User {
-    fn all(conn: &mut PgConnection) -> Result<Vec<User>, DbError> {
+impl User {
+    pub fn all(conn: &mut PgConnection) -> Result<Vec<User>, DbError> {
         let items = users::table.load::<Self>(conn)?;
         Ok(items)
     }
 
-    fn find(target_id: i32, conn: &mut PgConnection) -> Result<User, DbError> {
+    pub fn find(target_id: i32, conn: &mut PgConnection) -> Result<User, DbError> {
         let result = users::table.find(target_id).first::<User>(conn)?;
         Ok(result)
     }
 
-    fn create(data: NewUser, conn: &mut PgConnection) -> Result<User, DbError> {
+    pub fn find_by_email(target_email: &str, conn: &mut PgConnection) -> Result<User, DbError> {
+        let result = users::table
+            .filter(users::email.eq(target_email))
+            .first::<User>(conn)?;
+        Ok(result)
+    }
+
+    pub fn create(data: NewUser, conn: &mut PgConnection) -> Result<User, DbError> {
         let result = diesel::insert_into(users::table)
             .values(&data)
             .get_result(conn)
@@ -123,7 +174,7 @@ impl CrudOperations<User, NewUser, UpdateUser> for User {
         Ok(result)
     }
 
-    fn update(id: i32, data: UpdateUser, conn: &mut PgConnection) -> Result<User, DbError> {
+    pub fn update(id: i32, data: UpdateUser, conn: &mut PgConnection) -> Result<User, DbError> {
         let result = diesel::update(users::table.find(id))
             .set(&data)
             .get_result(conn)
@@ -131,7 +182,7 @@ impl CrudOperations<User, NewUser, UpdateUser> for User {
         Ok(result)
     }
 
-    fn delete(id: i32, conn: &mut PgConnection) -> Result<usize, DbError> {
+    pub fn delete(id: i32, conn: &mut PgConnection) -> Result<usize, DbError> {
         let num_deleted = diesel::delete(users::table.find(id))
             .execute(conn)
             .expect("Error on Delete");
