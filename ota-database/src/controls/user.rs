@@ -136,7 +136,8 @@ async fn login(
 ) -> Result<HttpResponse, Error> {
     let mut conn = data.pool.get().expect("Couldn't get DB connection");
 
-    let user = User::find_by_email(&body.email.to_string().to_lowercase(), &mut conn).unwrap();
+    let user = User::find_by_email(&body.email.to_string().to_lowercase(), &mut conn)
+        .expect("User not found");
 
     let parsed_hash = PasswordHash::new(&user.password).unwrap();
 

@@ -50,6 +50,7 @@ RUN mkdir -p /app/ftp
 
 # 复制编译后的应用程序到新的工作目录
 COPY --from=builder /app/target/release/ota-backend .
+COPY --from=builder /app/ota-backend/.env .
 
 ENV FW_DB=postgres://craftor:3.1415926@localhost:50000/firmware
 
