@@ -1,5 +1,6 @@
 use crate::{
     db::Database,
+    middleware::jwt_auth,
     models::{
         basic::CrudOperations,
         upgrade_history::{NewUpgradeHistory, UpdateUpgradeHistory, UpgradeHistory},
@@ -9,7 +10,10 @@ use crate::{
 use actix_web::{delete, get, patch, post, web, Error, HttpResponse};
 
 #[get("")]
-pub async fn index(data: web::Data<Database>) -> Result<HttpResponse, Error> {
+pub async fn index(
+    data: web::Data<Database>,
+    _: jwt_auth::JwtMiddleware,
+) -> Result<HttpResponse, Error> {
     let tweets = web::block(move || {
         let mut conn = data.pool.get()?;
         UpgradeHistory::all(&mut conn)
@@ -24,6 +28,7 @@ pub async fn index(data: web::Data<Database>) -> Result<HttpResponse, Error> {
 pub async fn create(
     data: web::Data<Database>,
     payload: web::Json<NewUpgradeHistory>,
+    _: jwt_auth::JwtMiddleware,
 ) -> Result<HttpResponse, Error> {
     let data = web::block(move || {
         let mut conn = data.pool.get()?;
@@ -36,7 +41,11 @@ pub async fn create(
 }
 
 #[get("/{id}")]
-pub async fn find(id: web::Path<i32>, db: web::Data<Database>) -> Result<HttpResponse, Error> {
+pub async fn find(
+    id: web::Path<i32>,
+    db: web::Data<Database>,
+    _: jwt_auth::JwtMiddleware,
+) -> Result<HttpResponse, Error> {
     let data = web::block(move || {
         let mut conn = db.pool.get()?;
         UpgradeHistory::find(id.into_inner(), &mut conn)
@@ -52,6 +61,7 @@ pub async fn update(
     id: web::Path<i32>,
     payload: web::Json<UpdateUpgradeHistory>,
     db: web::Data<Database>,
+    _: jwt_auth::JwtMiddleware,
 ) -> Result<HttpResponse, Error> {
     let tweet = web::block(move || {
         let mut conn = db.pool.get()?;
@@ -64,7 +74,11 @@ pub async fn update(
 }
 
 #[delete("/{id}")]
-pub async fn delete(id: web::Path<i32>, db: web::Data<Database>) -> Result<HttpResponse, Error> {
+pub async fn delete(
+    id: web::Path<i32>,
+    db: web::Data<Database>,
+    _: jwt_auth::JwtMiddleware,
+) -> Result<HttpResponse, Error> {
     let result = web::block(move || {
         let mut conn = db.pool.get()?;
         UpgradeHistory::delete(id.into_inner(), &mut conn)
