@@ -6,7 +6,7 @@ use crate::{
 
 use actix_web::{
     cookie::{time::Duration as ActixWebDuration, Cookie},
-    delete, get, patch, post, web, Error, HttpResponse, Responder,
+    delete, get, patch, post, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder,
 };
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -189,4 +189,31 @@ async fn logout(_: jwt_auth::JwtMiddleware) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().cookie(cookie).json(json!({
         "status": "success"
     })))
+}
+
+#[get("/me")]
+async fn get_me(
+    req: HttpRequest,
+    data: web::Data<Database>,
+    _: jwt_auth::JwtMiddleware,
+) -> impl Responder {
+    let ext = req.extensions();
+    let user_id = ext.get::<uuid::Uuid>().unwrap();
+
+    // let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
+    //     .fetch_one(&data.db)
+    //     .await
+    //     .unwrap();
+
+    let mut conn = data.pool.get().expect("Couldn't get DB connection");
+    let user = User::find_by_id(&user_id, &mut conn).unwrap();
+
+    let json_response = serde_json::json!({
+        "status":  "success",
+        "data": serde_json::json!({
+            "user": &user
+        })
+    });
+
+    HttpResponse::Ok().json(json_response)
 }

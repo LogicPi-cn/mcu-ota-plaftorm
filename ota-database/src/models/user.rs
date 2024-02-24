@@ -121,10 +121,12 @@ impl User {
     //     Ok(items)
     // }
 
-    // pub fn find(target_id: i32, conn: &mut PgConnection) -> Result<User, DbError> {
-    //     let result = users::table.find(target_id).first::<User>(conn)?;
-    //     Ok(result)
-    // }
+    pub fn find_by_id(target_id: &uuid::Uuid, conn: &mut PgConnection) -> Result<User, DbError> {
+        let result = users::table
+            .filter(users::id.eq(target_id))
+            .first::<User>(conn)?;
+        Ok(result)
+    }
 
     pub fn find_by_email(target_email: &str, conn: &mut PgConnection) -> Result<User, DbError> {
         let result = users::table

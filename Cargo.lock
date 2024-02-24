@@ -2128,7 +2128,7 @@ dependencies = [
 
 [[package]]
 name = "ota-backend"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "actix-cors",
  "actix-files",
@@ -2157,7 +2157,7 @@ dependencies = [
 
 [[package]]
 name = "ota-database"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "actix-cors",
  "actix-files",
