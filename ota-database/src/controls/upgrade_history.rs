@@ -1,5 +1,5 @@
 use crate::{
-    db::DbPool,
+    db::Database,
     models::{
         basic::CrudOperations,
         upgrade_history::{NewUpgradeHistory, UpdateUpgradeHistory, UpgradeHistory},
@@ -9,9 +9,9 @@ use crate::{
 use actix_web::{delete, get, patch, post, web, Error, HttpResponse};
 
 #[get("")]
-pub async fn index(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+pub async fn index(data: web::Data<Database>) -> Result<HttpResponse, Error> {
     let tweets = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = data.pool.get()?;
         UpgradeHistory::all(&mut conn)
     })
     .await?
@@ -22,11 +22,11 @@ pub async fn index(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
 
 #[post("")]
 pub async fn create(
-    pool: web::Data<DbPool>,
+    data: web::Data<Database>,
     payload: web::Json<NewUpgradeHistory>,
 ) -> Result<HttpResponse, Error> {
     let data = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = data.pool.get()?;
         UpgradeHistory::create(payload.into_inner(), &mut conn)
     })
     .await?
@@ -36,9 +36,9 @@ pub async fn create(
 }
 
 #[get("/{id}")]
-pub async fn find(id: web::Path<i32>, pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+pub async fn find(id: web::Path<i32>, db: web::Data<Database>) -> Result<HttpResponse, Error> {
     let data = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = db.pool.get()?;
         UpgradeHistory::find(id.into_inner(), &mut conn)
     })
     .await?
@@ -51,10 +51,10 @@ pub async fn find(id: web::Path<i32>, pool: web::Data<DbPool>) -> Result<HttpRes
 pub async fn update(
     id: web::Path<i32>,
     payload: web::Json<UpdateUpgradeHistory>,
-    pool: web::Data<DbPool>,
+    db: web::Data<Database>,
 ) -> Result<HttpResponse, Error> {
     let tweet = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = db.pool.get()?;
         UpgradeHistory::update(id.into_inner(), payload.into_inner(), &mut conn)
     })
     .await?
@@ -64,9 +64,9 @@ pub async fn update(
 }
 
 #[delete("/{id}")]
-pub async fn delete(id: web::Path<i32>, pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+pub async fn delete(id: web::Path<i32>, db: web::Data<Database>) -> Result<HttpResponse, Error> {
     let result = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = db.pool.get()?;
         UpgradeHistory::delete(id.into_inner(), &mut conn)
     })
     .await?

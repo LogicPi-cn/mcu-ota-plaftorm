@@ -1,5 +1,5 @@
 use crate::{
-    db::{Database, DbPool},
+    db::Database,
     middleware::jwt_auth,
     models::user::{LoginUserSchema, NewUser, RegisterUserSchema, TokenClaims, UpdateUser, User},
 };
@@ -17,9 +17,9 @@ use jsonwebtoken::{encode, EncodingKey, Header};
 use serde_json::json;
 
 #[get("")]
-pub async fn index(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+pub async fn index(data: web::Data<Database>) -> Result<HttpResponse, Error> {
     let tweets = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = data.pool.get()?;
         User::all(&mut conn)
     })
     .await?
@@ -30,11 +30,11 @@ pub async fn index(pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
 
 #[post("")]
 pub async fn create(
-    pool: web::Data<DbPool>,
+    data: web::Data<Database>,
     payload: web::Json<NewUser>,
 ) -> Result<HttpResponse, Error> {
     let data = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = data.pool.get()?;
         User::create(payload.into_inner(), &mut conn)
     })
     .await?
@@ -44,9 +44,9 @@ pub async fn create(
 }
 
 #[get("/{id}")]
-pub async fn find(id: web::Path<i32>, pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+pub async fn find(id: web::Path<i32>, data: web::Data<Database>) -> Result<HttpResponse, Error> {
     let data = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = data.pool.get()?;
         User::find(id.into_inner(), &mut conn)
     })
     .await?
@@ -59,10 +59,10 @@ pub async fn find(id: web::Path<i32>, pool: web::Data<DbPool>) -> Result<HttpRes
 pub async fn update(
     id: web::Path<i32>,
     payload: web::Json<UpdateUser>,
-    pool: web::Data<DbPool>,
+    data: web::Data<Database>,
 ) -> Result<HttpResponse, Error> {
     let user = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = data.pool.get()?;
         User::update(id.into_inner(), payload.into_inner(), &mut conn)
     })
     .await?
@@ -72,9 +72,9 @@ pub async fn update(
 }
 
 #[delete("/{id}")]
-pub async fn delete(id: web::Path<i32>, pool: web::Data<DbPool>) -> Result<HttpResponse, Error> {
+pub async fn delete(id: web::Path<i32>, data: web::Data<Database>) -> Result<HttpResponse, Error> {
     let result = web::block(move || {
-        let mut conn = pool.get()?;
+        let mut conn = data.pool.get()?;
         User::delete(id.into_inner(), &mut conn)
     })
     .await?
@@ -87,9 +87,9 @@ pub async fn delete(id: web::Path<i32>, pool: web::Data<DbPool>) -> Result<HttpR
 #[post("/register")]
 async fn register(
     body: web::Json<RegisterUserSchema>,
-    pool: web::Data<DbPool>,
+    data: web::Data<Database>,
 ) -> Result<HttpResponse, Error> {
-    let mut conn = pool.get().expect("Couldn't get DB connection");
+    let mut conn = data.pool.get().expect("Couldn't get DB connection");
 
     let exists = User::find_by_email(&body.email.to_string().to_lowercase(), &mut conn);
 
@@ -132,9 +132,9 @@ async fn register(
 #[post("/login")]
 async fn login(
     body: web::Json<LoginUserSchema>,
-    pool: web::Data<Database>,
+    data: web::Data<Database>,
 ) -> Result<HttpResponse, Error> {
-    let mut conn = pool.pool.get().expect("Couldn't get DB connection");
+    let mut conn = data.pool.get().expect("Couldn't get DB connection");
 
     let user = User::find_by_email(&body.email.to_string().to_lowercase(), &mut conn).unwrap();
 
@@ -162,7 +162,7 @@ async fn login(
     let token = encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(pool.env.jwt_secret.as_ref()),
+        &EncodingKey::from_secret(data.env.jwt_secret.as_ref()),
     )
     .unwrap();
 
