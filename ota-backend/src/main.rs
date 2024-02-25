@@ -28,7 +28,7 @@ async fn main() -> std::io::Result<()> {
     // print logo
     println!("{}", LOGO);
     let version = env!("CARGO_PKG_VERSION");
-    println!("OTA File Server, Version: {}", version);
+    println!("OTA Backend, Version: {}", version);
 
     let _fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone());
     let _port = env::var("PORT").unwrap_or_else(|_| (cli.port as u32).to_string());
@@ -40,8 +40,9 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let cors = Cors::default()
-            .allowed_origin("http://localhost:3000")
-            .allowed_methods(vec!["GET", "POST"])
+            // .allowed_origin("http://localhost")
+            .allow_any_origin()
+            .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE"])
             .allowed_headers(vec![
                 header::CONTENT_TYPE,
                 header::AUTHORIZATION,
