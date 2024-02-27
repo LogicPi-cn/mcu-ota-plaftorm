@@ -61,17 +61,11 @@ diesel::table! {
     users (id) {
         id -> Uuid,
         #[max_length = 100]
-        name -> Varchar,
-        #[max_length = 100]
-        email -> Varchar,
-        #[max_length = 20]
-        phone -> Nullable<Varchar>,
+        username -> Varchar,
         #[max_length = 100]
         password -> Varchar,
         #[max_length = 100]
-        role -> Nullable<Varchar>,
-        #[max_length = 20]
-        photo -> Nullable<Varchar>,
+        email -> Varchar,
         verified -> Bool,
         created_at -> Timestamp,
         updated_at -> Timestamp,

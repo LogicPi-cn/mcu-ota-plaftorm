@@ -112,7 +112,7 @@ async fn register(
         .to_string();
 
     let new_user = NewUser {
-        name: body.name.to_string(),
+        username: body.username.to_string(),
         email: body.email.to_string().to_lowercase(),
         password: hashed_password,
     };

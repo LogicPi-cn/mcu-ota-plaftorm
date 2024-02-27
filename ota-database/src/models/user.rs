@@ -13,12 +13,9 @@ use super::basic::random_string;
 #[diesel(table_name = users)]
 pub struct User {
     pub id: uuid::Uuid,
-    pub name: String,
-    pub email: String,
-    pub phone: Option<String>,
+    pub username: String,
     pub password: String,
-    pub role: Option<String>,
-    pub photo: Option<String>,
+    pub email: String,
     pub verified: bool,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
@@ -33,38 +30,42 @@ pub struct TokenClaims {
 
 #[derive(Debug, Deserialize, PartialEq, Eq)]
 pub struct RegisterUserSchema {
-    pub name: String,
-    pub email: String,
+    pub username: String,
     pub password: String,
+    pub email: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct LoginUserSchema {
-    pub email: String,
     pub password: String,
+    pub email: String,
 }
 
 /// 格式化打印
 impl fmt::Display for User {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "User -> Name:{}, Email:{}", self.name, self.email)
+        write!(
+            f,
+            "User -> Username:{}, Email:{}",
+            self.username, self.email
+        )
     }
 }
 
 #[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq, Clone)]
 #[diesel(table_name = users)]
 pub struct NewUser {
-    pub name: String,
-    pub email: String,
+    pub username: String,
     pub password: String,
+    pub email: String,
 }
 
 impl NewUser {
     pub fn random() -> Self {
         NewUser {
-            name: random_string(10),
-            email: random_string(10),
+            username: random_string(10),
             password: random_string(10),
+            email: random_string(10),
         }
     }
 }
@@ -72,19 +73,20 @@ impl NewUser {
 /// 格式化打印
 impl fmt::Display for NewUser {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "User -> Name:{}, Email:{}", self.name, self.email)
+        write!(
+            f,
+            "User -> Username:{}, Email:{}",
+            self.username, self.email
+        )
     }
 }
 
 #[derive(Debug, Deserialize, AsChangeset, Serialize, Default, Clone)]
 #[diesel(table_name = users )]
 pub struct UpdateUser {
-    pub name: String,
-    pub email: String,
-    pub phone: String,
+    pub username: String,
     pub password: String,
-    pub role: String,
-    pub photo: String,
+    pub email: String,
     pub verified: bool,
     pub updated_at: Option<NaiveDateTime>,
 }
@@ -92,12 +94,9 @@ pub struct UpdateUser {
 impl UpdateUser {
     pub fn random() -> Self {
         UpdateUser {
-            name: random_string(10),
-            email: random_string(10),
-            phone: random_string(10),
+            username: random_string(10),
             password: random_string(10),
-            role: random_string(10),
-            photo: random_string(10),
+            email: random_string(10),
             verified: false,
             updated_at: Some(Utc::now().naive_utc()),
         }
@@ -109,8 +108,8 @@ impl fmt::Display for UpdateUser {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "User -> Name:{}, Email:{}, Phone:{}",
-            self.name, self.email, self.phone
+            "User -> Username:{}, Email:{}",
+            self.username, self.email
         )
     }
 }
