@@ -115,10 +115,10 @@ impl fmt::Display for UpdateUser {
 }
 
 impl User {
-    // pub fn all(conn: &mut PgConnection) -> Result<Vec<User>, DbError> {
-    //     let items = users::table.load::<Self>(conn)?;
-    //     Ok(items)
-    // }
+    pub fn all(conn: &mut PgConnection) -> Result<Vec<User>, DbError> {
+        let items = users::table.load::<Self>(conn)?;
+        Ok(items)
+    }
 
     pub fn find_by_id(target_id: &uuid::Uuid, conn: &mut PgConnection) -> Result<User, DbError> {
         let result = users::table
@@ -142,18 +142,24 @@ impl User {
         Ok(result)
     }
 
-    // pub fn update(id: i32, data: UpdateUser, conn: &mut PgConnection) -> Result<User, DbError> {
-    //     let result = diesel::update(users::table.find(id))
-    //         .set(&data)
-    //         .get_result(conn)
-    //         .expect("Error on Update");
-    //     Ok(result)
-    // }
+    pub fn update_by_email(
+        target_email: &str,
+        updated_data: UpdateUser,
+        conn: &mut PgConnection,
+    ) -> Result<User, DbError> {
+        let updated_user = diesel::update(users::table.filter(users::email.eq(target_email)))
+            .set(&updated_data)
+            .get_result(conn)
+            .expect("Error on Update");
 
-    // pub fn delete(id: i32, conn: &mut PgConnection) -> Result<usize, DbError> {
-    //     let num_deleted = diesel::delete(users::table.find(id))
-    //         .execute(conn)
-    //         .expect("Error on Delete");
-    //     Ok(num_deleted)
-    // }
+        Ok(updated_user)
+    }
+
+    pub fn delete_by_email(target_email: &str, conn: &mut PgConnection) -> Result<usize, DbError> {
+        let num_deleted = diesel::delete(users::table.filter(users::email.eq(target_email)))
+            .execute(conn)
+            .expect("Error on Delete");
+
+        Ok(num_deleted)
+    }
 }

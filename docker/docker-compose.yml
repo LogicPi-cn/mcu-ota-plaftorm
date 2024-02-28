@@ -1,7 +1,7 @@
 version: '3.8'
 services:
   ota-backend:
-    image: logicpi/ota-backend:0.5.0
+    image: logicpi/ota-backend:0.5.1
     container_name: ota-backend
     ports:
       - 20000:20000
@@ -23,8 +23,8 @@ services:
       - ota-database
 
   ota-database:
-    image: logicpi/ota-database:0.5.0
-    container_name: ota-database 
+    image: logicpi/ota-database:0.5.2
+    container_name: ota-database
     command: postgres -c 'max_connections=1000'
     volumes:
       - pgdata:/var/lib/postgresql/data

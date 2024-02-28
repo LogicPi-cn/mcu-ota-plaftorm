@@ -16,22 +16,23 @@ use chrono::{prelude::*, Duration};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde_json::json;
 
-// #[get("")]
-// pub async fn index(data: web::Data<Database>) -> Result<HttpResponse, Error> {
-//     let tweets = web::block(move || {
-//         let mut conn = data.pool.get()?;
-//         User::all(&mut conn)
-//     })
-//     .await?
-//     .map_err(actix_web::error::ErrorInternalServerError)?;
+#[get("")]
+pub async fn index(data: web::Data<Database>) -> Result<HttpResponse, Error> {
+    let tweets = web::block(move || {
+        let mut conn = data.pool.get()?;
+        User::all(&mut conn)
+    })
+    .await?
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
-//     Ok(HttpResponse::Ok().json(tweets))
-// }
+    Ok(HttpResponse::Ok().json(tweets))
+}
 
 #[post("")]
 pub async fn create(
     data: web::Data<Database>,
     payload: web::Json<NewUser>,
+    _: jwt_auth::JwtMiddleware,
 ) -> Result<HttpResponse, Error> {
     let data = web::block(move || {
         let mut conn = data.pool.get()?;
@@ -43,46 +44,55 @@ pub async fn create(
     Ok(HttpResponse::Ok().json(data))
 }
 
-// #[get("/{id}")]
-// pub async fn find(id: web::Path<i32>, data: web::Data<Database>) -> Result<HttpResponse, Error> {
-//     let data = web::block(move || {
-//         let mut conn = data.pool.get()?;
-//         User::find(id.into_inner(), &mut conn)
-//     })
-//     .await?
-//     .map_err(actix_web::error::ErrorInternalServerError)?;
+#[get("/{email}")]
+pub async fn find(
+    email: web::Path<String>,
+    data: web::Data<Database>,
+    _: jwt_auth::JwtMiddleware,
+) -> Result<HttpResponse, Error> {
+    let data = web::block(move || {
+        let mut conn = data.pool.get()?;
+        User::find_by_email(&email.into_inner(), &mut conn)
+    })
+    .await?
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
-//     Ok(HttpResponse::Ok().json(data))
-// }
+    Ok(HttpResponse::Ok().json(data))
+}
 
-// #[patch("/{id}")]
-// pub async fn update(
-//     id: web::Path<i32>,
-//     payload: web::Json<UpdateUser>,
-//     data: web::Data<Database>,
-// ) -> Result<HttpResponse, Error> {
-//     let user = web::block(move || {
-//         let mut conn = data.pool.get()?;
-//         User::update(id.into_inner(), payload.into_inner(), &mut conn)
-//     })
-//     .await?
-//     .map_err(actix_web::error::ErrorInternalServerError)?;
+#[patch("/{email}")]
+pub async fn update(
+    email: web::Path<String>,
+    payload: web::Json<UpdateUser>,
+    data: web::Data<Database>,
+    _: jwt_auth::JwtMiddleware,
+) -> Result<HttpResponse, Error> {
+    let user = web::block(move || {
+        let mut conn = data.pool.get()?;
+        User::update_by_email(&email.into_inner(), payload.into_inner(), &mut conn)
+    })
+    .await?
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
-//     Ok(HttpResponse::Ok().json(user))
-// }
+    Ok(HttpResponse::Ok().json(user))
+}
 
-// #[delete("/{id}")]
-// pub async fn delete(id: web::Path<i32>, data: web::Data<Database>) -> Result<HttpResponse, Error> {
-//     let result = web::block(move || {
-//         let mut conn = data.pool.get()?;
-//         User::delete(id.into_inner(), &mut conn)
-//     })
-//     .await?
-//     .map(|data| HttpResponse::Ok().json(data))
-//     .map_err(actix_web::error::ErrorInternalServerError)?;
+#[delete("/{email}")]
+pub async fn delete(
+    email: web::Path<String>,
+    data: web::Data<Database>,
+    _: jwt_auth::JwtMiddleware,
+) -> Result<HttpResponse, Error> {
+    let result = web::block(move || {
+        let mut conn = data.pool.get()?;
+        User::delete_by_email(&email.into_inner(), &mut conn)
+    })
+    .await?
+    .map(|data| HttpResponse::Ok().json(data))
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
-//     Ok(result)
-// }
+    Ok(result)
+}
 
 #[post("/auth/register")]
 async fn register(
@@ -206,11 +216,6 @@ async fn get_me(
 ) -> impl Responder {
     let ext = req.extensions();
     let user_id = ext.get::<uuid::Uuid>().unwrap();
-
-    // let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
-    //     .fetch_one(&data.db)
-    //     .await
-    //     .unwrap();
 
     let mut conn = data.pool.get().expect("Couldn't get DB connection");
     let user = User::find_by_id(&user_id, &mut conn).unwrap();
