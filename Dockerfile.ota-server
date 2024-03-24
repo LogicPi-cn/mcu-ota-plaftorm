@@ -43,7 +43,7 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 # 安装必要的依赖
 RUN apt-get update && \
-    apt-get install -y ca-certificates tzdata libpq5 dialog apt-utils && \
+    apt-get install -y libpq5 dialog apt-utils && \
     rm -rf /var/lib/apt/lists/*
 
 # 创建一个新的工作目录
