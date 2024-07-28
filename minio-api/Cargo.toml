@@ -7,4 +7,5 @@ edition = "2021"
 
 [dependencies]
 minio = "0.1.0"
-tokio = "1.36.0"
+minio-rsc = { version = "0.2.3", features = ["fs-tokio"] }
+tokio = { version = "1.39.2", features = ["full"] }
