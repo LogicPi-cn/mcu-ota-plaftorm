@@ -1,6 +1,6 @@
 use crate::{
     db::Database,
-    middleware::jwt_auth,
+    // middleware::jwt_auth,
     models::{
         basic::CrudOperations,
         firmware_data::{FirmwareData, NewFirmwareData, UpdateFirmwareData},
@@ -12,7 +12,7 @@ use actix_web::{delete, get, patch, post, web, Error, HttpResponse};
 #[get("")]
 pub async fn index(
     db: web::Data<Database>,
-    _: jwt_auth::JwtMiddleware,
+    // _: jwt_auth::JwtMiddleware,
 ) -> Result<HttpResponse, Error> {
     let tweets = web::block(move || {
         let mut conn = db.pool.get()?;
@@ -28,7 +28,7 @@ pub async fn index(
 pub async fn create(
     db: web::Data<Database>,
     payload: web::Json<NewFirmwareData>,
-    _: jwt_auth::JwtMiddleware,
+    // _: jwt_auth::JwtMiddleware,
 ) -> Result<HttpResponse, Error> {
     let data = web::block(move || {
         let mut conn = db.pool.get()?;
@@ -44,7 +44,7 @@ pub async fn create(
 pub async fn find(
     id: web::Path<i32>,
     db: web::Data<Database>,
-    _: jwt_auth::JwtMiddleware,
+    // _: jwt_auth::JwtMiddleware,
 ) -> Result<HttpResponse, Error> {
     let data = web::block(move || {
         let mut conn = db.pool.get()?;
@@ -61,7 +61,7 @@ pub async fn update(
     id: web::Path<i32>,
     payload: web::Json<UpdateFirmwareData>,
     db: web::Data<Database>,
-    _: jwt_auth::JwtMiddleware,
+    // _: jwt_auth::JwtMiddleware,
 ) -> Result<HttpResponse, Error> {
     let tweet = web::block(move || {
         let mut conn = db.pool.get()?;
@@ -77,7 +77,7 @@ pub async fn update(
 pub async fn delete(
     id: web::Path<i32>,
     db: web::Data<Database>,
-    _: jwt_auth::JwtMiddleware,
+    // _: jwt_auth::JwtMiddleware,
 ) -> Result<HttpResponse, Error> {
     let result = web::block(move || {
         let mut conn = db.pool.get()?;

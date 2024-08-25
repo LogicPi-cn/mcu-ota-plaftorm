@@ -8,7 +8,7 @@ use ota_backend::LOGO;
 
 use log::info;
 use ota_backend::args::Cli;
-use ota_database::db::Config;
+// use ota_database::db::Config;
 use ota_database::{db::Database, routes::total::apis};
 use std::env;
 
@@ -23,7 +23,7 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init();
 
-    let config = Config::init();
+    // let config = Config::init();
 
     // print logo
     println!("{}", LOGO);
@@ -53,7 +53,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .app_data(web::Data::new(Database {
                 pool: _db.pool.clone(),
-                env: config.clone(),
+                // env: config.clone(),
             }))
             .service(apis())
     })

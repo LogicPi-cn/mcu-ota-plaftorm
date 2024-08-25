@@ -1,4 +1,4 @@
-use crate::controls::{config_history, firmware_data, upgrade_history, user};
+use crate::controls::{config_history, firmware_data, upgrade_history};
 use actix_web::{web, Scope};
 
 fn firmware_data(path: &str) -> Scope {
@@ -31,25 +31,25 @@ fn config_history(path: &str) -> Scope {
     return result;
 }
 
-fn user(path: &str) -> Scope {
-    let result = web::scope(path)
-        // .service(user::index)
-        .service(user::create)
-        // .service(user::find)
-        // .service(user::update)
-        // .service(user::delete)
-        .service(user::get_me)
-        .service(user::register)
-        .service(user::login)
-        .service(user::logout);
-    return result;
-}
+// fn user(path: &str) -> Scope {
+//     let result = web::scope(path)
+//         // .service(user::index)
+//         .service(user::create)
+//         // .service(user::find)
+//         // .service(user::update)
+//         // .service(user::delete)
+//         .service(user::get_me)
+//         .service(user::register)
+//         .service(user::login)
+//         .service(user::logout);
+//     return result;
+// }
 
 pub fn apis() -> Scope {
     let service = web::scope("")
         .service(upgrade_history("/history"))
         .service(firmware_data("/firmware"))
-        .service(config_history("/config"))
-        .service(user("/user"));
+        .service(config_history("/config"));
+    // .service(user("/user"));
     return service;
 }

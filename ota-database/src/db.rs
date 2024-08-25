@@ -7,7 +7,7 @@ pub type DbPool = r2d2::Pool<ConnectionManager<PgConnection>>;
 #[derive(Debug, Clone)]
 pub struct Database {
     pub pool: DbPool,
-    pub env: Config,
+    // pub env: Config,
 }
 
 impl Database {
@@ -22,7 +22,7 @@ impl Database {
 
         Database {
             pool,
-            env: Config::init(),
+            // env: Config::init(),
         }
     }
 }

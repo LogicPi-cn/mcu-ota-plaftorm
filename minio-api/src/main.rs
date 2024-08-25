@@ -8,7 +8,7 @@ use minio_rsc::Minio;
 use std::fs::File;
 use std::io::Read;
 
-async fn example() -> Result<()> {
+async fn _example() -> Result<()> {
     let provider = StaticProvider::new(ACCESS_KEY, SECRET_KEY, None);
     let minio = Minio::builder()
         .endpoint("ota.logicpi.cn:9000")
