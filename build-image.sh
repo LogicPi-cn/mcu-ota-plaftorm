@@ -28,7 +28,7 @@ for dir in $(find . -maxdepth 1 -type d ! -name ".*" ! -name "target" -print); d
                     -f Dockerfile.$app_name \
                     --tag logicpi/$app_name \
                     --tag logicpi/$app_name:$app_version .\
-                    --platform linux/amd64 \
+                    --platform linux/amd64,linux/arm64 \
                     --push
         fi
     fi

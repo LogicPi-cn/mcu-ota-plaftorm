@@ -1,5 +1,5 @@
 # 使用 Rust 官方 Docker 镜像作为基础镜像
-FROM rust:latest as builder
+FROM rust:latest AS builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -30,7 +30,7 @@ COPY . .
 RUN cargo build --release 
 
 # 从新的镜像开始构建
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -52,7 +52,7 @@ RUN mkdir -p /app/ftp
 COPY --from=builder /app/target/release/ota-backend .
 COPY --from=builder /app/ota-backend/.env .
 
-ENV FW_DB=postgres://craftor:3.1415926@localhost:50000/firmware
+ENV FW_DB postgres://craftor:3.1415926@localhost:50000/firmware
 
 EXPOSE 20000/tcp
 

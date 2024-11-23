@@ -1,5 +1,5 @@
 # 使用 Rust 官方 Docker 镜像作为基础镜像
-FROM rust:latest as builder
+FROM rust:latest AS builder
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -34,7 +34,7 @@ RUN cargo build --release
 ###########################################
 
 # 使用一个新的基础镜像，减小打包后的镜像大小
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ARG TARGETPLATFORM
 ARG BUILDPLATFORM
@@ -55,8 +55,8 @@ RUN mkdir -p /app/ftp
 # 复制编译后的应用程序到新的工作目录
 COPY --from=builder /app/target/release/ota-server .
 
-ENV FW_SERVER=http://127.0.0.1:20000
-ENV PORT=9999
+ENV FW_SERVER http://127.0.0.1:20000
+ENV PORT 9999
 
 EXPOSE 9999/tcp
 
