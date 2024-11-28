@@ -1,6 +1,6 @@
 services:
   ota-backend:
-    image: logicpi/ota-backend:0.5.1
+    image: logicpi/ota-backend:0.6.0
     container_name: ota-backend
     ports:
       - 20000:20000
