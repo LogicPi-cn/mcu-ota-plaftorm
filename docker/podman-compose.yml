@@ -1,0 +1,39 @@
+version: "3.8"
+services:
+  ota-database:
+    image: logicpi/ota-database:0.5.2
+    container_name: ota-database
+    command: postgres -c 'max_connections=1000'
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: ota-pod
+    spec:
+      containers:
+        - name: ota-database
+          image: docker.io/logicpi/ota-database:0.5.2
+          command: ["postgres", "-c", "max_connections=1000"]
+          volumeMounts:
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+        - name: ota-backend
+          image: docker.io/logicpi/ota-backend:0.6.0
+          ports:
+            - containerPort: 20000
+          env:
+            - name: FW_DB
+              value: "postgres://craftor:3.1415926@localhost:5432/firmware"
+        - name: ota-server
+          image: docker.io/logicpi/ota-server:0.4.2
+          ports:
+            - containerPort: 9999
+          env:
+            - name: FW_SERVER
+              value: "http://localhost:20000"
+            - name: FW_DB
+              value: "postgres://craftor:3.1415926@localhost:5432/firmware"
+      volumes:
+        - name: pgdata
+          emptyDir: {}
+
+    # Usage: podman play kube docker/podman-compose.yml
