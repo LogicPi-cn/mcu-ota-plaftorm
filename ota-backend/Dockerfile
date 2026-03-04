@@ -11,21 +11,17 @@ RUN sed -i 's/deb.debian.org/mirrors.ustc.edu.cn/g' /etc/apt/sources.list.d/debi
 RUN apt-get update && \
     apt-get install -y cmake build-essential
 
-# 配置 Rust crates 国内镜像源
-RUN mkdir -p ~/.cargo && \
-    echo '[source.crates-io]' > ~/.cargo/config.toml && \
-    echo 'replace-with = "ustc"' >> ~/.cargo/config.toml && \
-    echo '[source.ustc]' >> ~/.cargo/config.toml && \
-    echo 'registry = "sparse+https://mirrors.ustc.edu.cn/crates.io/index/"' >> ~/.cargo/config.toml
-
 # 在容器中创建一个工作目录
-WORKDIR /app
+WORKDIR /app/ota-backend
 
-# 复制整个项目
+# 复制根目录的 Cargo 文件
+COPY ../Cargo.toml ../Cargo.lock ./
+
+# 复制后端代码
 COPY . .
 
 # 使用 Cargo 构建项目
-RUN cargo build --release --package ota-backend
+RUN cargo build --release
 
 # 从新的镜像开始构建
 FROM ubuntu:24.04
@@ -37,7 +33,7 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
 
 # 安装必要的依赖
 RUN apt-get update && \
-    apt-get install -y libpq5 curl dialog apt-utils && \
+    apt-get install -y libpq5 dialog apt-utils && \
     rm -rf /var/lib/apt/lists/*
 
 # 创建一个新的工作目录
@@ -49,7 +45,7 @@ ENV FW_DB=postgres://craftor:3.1415926@ota-database:5432/firmware
 ENV DATABASE_URL=postgres://craftor:3.1415926@ota-database:5432/firmware
 
 # 复制编译后的应用程序到新的工作目录
-COPY --from=builder /app/target/release/ota-backend .
+COPY --from=builder /app/ota-backend/target/release/ota-backend .
 
 EXPOSE 20000/tcp
 

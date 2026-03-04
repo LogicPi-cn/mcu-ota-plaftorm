@@ -24,13 +24,15 @@ services:
 
   # OTA 后端 API 服务
   ota-backend:
-    image: logicpi/ota-backend:0.6.0
+    image: logicpi/ota-backend:latest
     container_name: ota-backend
+    pull_policy: never
     restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-20000}:20000"
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-craftor}:${POSTGRES_PASSWORD:-3.1415926}@ota-database:5432/${POSTGRES_DB:-firmware}
+      FW_DB: postgres://${POSTGRES_USER:-craftor}:${POSTGRES_PASSWORD:-3.1415926}@ota-database:5432/${POSTGRES_DB:-firmware}
       JWT_SECRET: ${BACKEND_JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       JWT_EXPIRED_IN: ${BACKEND_JWT_EXPIRED_IN:-60}
       JWT_MAXAGE: ${BACKEND_JWT_MAXAGE:-60}
@@ -42,7 +44,7 @@ services:
     networks:
       - ota-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:20000/api/healthchecker"]
+      test: ["CMD", "curl", "-f", "http://localhost:20000/healthchecker"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -63,6 +65,24 @@ services:
     depends_on:
       - ota-backend
       - ota-database
+    networks:
+      - ota-network
+
+  # OTA 前端服务 (Web 界面)
+  ota-frontend:
+    build:
+      context: ../ota-frontend
+      dockerfile: Dockerfile
+    image: logicpi/ota-frontend:0.1.0
+    container_name: ota-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    environment:
+      - BACKEND_URL=http://ota-backend:20000
+      - TZ=${TZ:-Asia/Shanghai}
+    depends_on:
+      - ota-backend
     networks:
       - ota-network
 

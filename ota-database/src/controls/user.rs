@@ -1,12 +1,12 @@
 use crate::{
     db::Database,
     middleware::jwt_auth,
-    models::user::{LoginUserSchema, NewUser, RegisterUserSchema, TokenClaims, UpdateUser, User},
+    models::user::{LoginUserSchema, RegisterUserSchema, TokenClaims, User},
 };
 
 use actix_web::{
     cookie::{time::Duration as ActixWebDuration, Cookie},
-    delete, get, patch, post, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder,
+    get, post, web, Error, HttpMessage, HttpRequest, HttpResponse, Responder,
 };
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHash, PasswordHasher, PasswordVerifier, SaltString},
@@ -16,100 +16,14 @@ use chrono::{prelude::*, Duration};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde_json::json;
 
-#[get("")]
-pub async fn index(data: web::Data<Database>) -> Result<HttpResponse, Error> {
-    let tweets = web::block(move || {
-        let mut conn = data.pool.get()?;
-        User::all(&mut conn)
-    })
-    .await?
-    .map_err(actix_web::error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Ok().json(tweets))
-}
-
-#[post("")]
-pub async fn create(
-    data: web::Data<Database>,
-    payload: web::Json<NewUser>,
-    _: jwt_auth::JwtMiddleware,
-) -> Result<HttpResponse, Error> {
-    let data = web::block(move || {
-        let mut conn = data.pool.get()?;
-        User::create(payload.into_inner(), &mut conn)
-    })
-    .await?
-    .map_err(actix_web::error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Ok().json(data))
-}
-
-#[get("/{email}")]
-pub async fn find(
-    email: web::Path<String>,
-    data: web::Data<Database>,
-    _: jwt_auth::JwtMiddleware,
-) -> Result<HttpResponse, Error> {
-    let data = web::block(move || {
-        let mut conn = data.pool.get()?;
-        User::find_by_email(&email.into_inner(), &mut conn)
-    })
-    .await?
-    .map_err(actix_web::error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Ok().json(data))
-}
-
-#[patch("/{email}")]
-pub async fn update(
-    email: web::Path<String>,
-    payload: web::Json<UpdateUser>,
-    data: web::Data<Database>,
-    _: jwt_auth::JwtMiddleware,
-) -> Result<HttpResponse, Error> {
-    let user = web::block(move || {
-        let mut conn = data.pool.get()?;
-        User::update_by_email(&email.into_inner(), payload.into_inner(), &mut conn)
-    })
-    .await?
-    .map_err(actix_web::error::ErrorInternalServerError)?;
-
-    Ok(HttpResponse::Ok().json(user))
-}
-
-#[delete("/{email}")]
-pub async fn delete(
-    email: web::Path<String>,
-    data: web::Data<Database>,
-    _: jwt_auth::JwtMiddleware,
-) -> Result<HttpResponse, Error> {
-    let result = web::block(move || {
-        let mut conn = data.pool.get()?;
-        User::delete_by_email(&email.into_inner(), &mut conn)
-    })
-    .await?
-    .map(|data| HttpResponse::Ok().json(data))
-    .map_err(actix_web::error::ErrorInternalServerError)?;
-
-    Ok(result)
-}
-
-#[post("/auth/register")]
+#[post("/register")]
 async fn register(
     body: web::Json<RegisterUserSchema>,
     data: web::Data<Database>,
 ) -> Result<HttpResponse, Error> {
-    let mut conn = match data.pool.get() {
-        Ok(conn) => conn,
-        Err(_) => {
-            return Ok(HttpResponse::InternalServerError().json(json!({
-                "status": "fail",
-                "message": "Database connection failed"
-            })));
-        }
-    };
+    let pool = &data.pool;
 
-    let exists = User::find_by_email(&body.email.to_string().to_lowercase(), &mut conn);
+    let exists = User::find_by_email(&body.email.to_string().to_lowercase(), pool).await;
 
     match exists {
         Ok(_) => {
@@ -136,13 +50,13 @@ async fn register(
         }
     };
 
-    let new_user = NewUser {
+    let new_user = crate::models::user::NewUser {
         username: body.username.to_string(),
         email: body.email.to_string().to_lowercase(),
         password: hashed_password,
     };
 
-    let user = match User::create(new_user, &mut conn) {
+    let user = match User::create(new_user, pool).await {
         Ok(user) => user,
         Err(_) => {
             return Ok(HttpResponse::InternalServerError().json(json!({
@@ -162,22 +76,14 @@ async fn register(
     Ok(HttpResponse::Ok().json(user_response))
 }
 
-#[post("/auth/login")]
+#[post("/login")]
 async fn login(
     body: web::Json<LoginUserSchema>,
     data: web::Data<Database>,
 ) -> Result<HttpResponse, Error> {
-    let mut conn = match data.pool.get() {
-        Ok(conn) => conn,
-        Err(_) => {
-            return Ok(HttpResponse::InternalServerError().json(json!({
-                "status": "fail",
-                "message": "Database connection failed"
-            })));
-        }
-    };
+    let pool = &data.pool;
 
-    let user = match User::find_by_email(&body.email.to_string().to_lowercase(), &mut conn) {
+    let user = match User::find_by_email(&body.email.to_string().to_lowercase(), pool).await {
         Ok(user) => user,
         Err(_) => {
             return Ok(HttpResponse::BadRequest().json(json!({
@@ -215,10 +121,13 @@ async fn login(
         iat,
     };
 
+    let jwt_secret = std::env::var("JWT_SECRET")
+        .unwrap_or_else(|_| "default-secret".to_string());
+
     let token = match encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(data.env.jwt_secret.as_ref()),
+        &EncodingKey::from_secret(jwt_secret.as_ref()),
     ) {
         Ok(token) => token,
         Err(_) => {
@@ -241,7 +150,7 @@ async fn login(
     })))
 }
 
-#[get("/auth/logout")]
+#[get("/logout")]
 async fn logout(_: jwt_auth::JwtMiddleware) -> Result<HttpResponse, Error> {
     let cookie = Cookie::build("token", "")
         .path("/")
@@ -269,17 +178,9 @@ async fn get_me(
         })),
     };
 
-    let mut conn = match data.pool.get() {
-        Ok(conn) => conn,
-        Err(_) => {
-            return HttpResponse::InternalServerError().json(json!({
-                "status": "fail",
-                "message": "Database connection failed"
-            }));
-        }
-    };
+    let pool = &data.pool;
 
-    let user = match User::find_by_id(&user_id, &mut conn) {
+    let user = match User::find_by_id(&user_id, pool).await {
         Ok(user) => user,
         Err(_) => {
             return HttpResponse::InternalServerError().json(json!({

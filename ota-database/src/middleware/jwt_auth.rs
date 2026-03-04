@@ -1,4 +1,5 @@
 use core::fmt;
+use std::collections::HashSet;
 use std::future::{ready, Ready};
 
 use actix_web::error::ErrorUnauthorized;
@@ -47,7 +48,8 @@ impl FromRequest for JwtMiddleware {
             .or_else(|| {
                 req.headers()
                     .get(http::header::AUTHORIZATION)
-                    .map(|h| h.to_str().ok()?.split_at(7).1.to_string())
+                    .and_then(|h| h.to_str().ok())
+                    .map(|s| s.split_at(7).1.to_string())
             });
 
         if token.is_none() {
@@ -61,11 +63,14 @@ impl FromRequest for JwtMiddleware {
         // Create validation with specific algorithm and enable expiry validation
         let mut validation = Validation::new(Algorithm::HS256);
         validation.validate_exp = true;
-        validation.required_spec_claims = vec!["sub".to_string(), "exp".to_string(), "iat".to_string()];
+        validation.required_spec_claims = HashSet::from(["sub".to_string(), "exp".to_string(), "iat".to_string()]);
+
+        let jwt_secret = std::env::var("JWT_SECRET")
+            .unwrap_or_else(|_| "default-secret".to_string());
 
         let claims = match decode::<TokenClaims>(
             &token.unwrap(),
-            &DecodingKey::from_secret(data.env.jwt_secret.as_ref()),
+            &DecodingKey::from_secret(jwt_secret.as_ref()),
             &validation,
         ) {
             Ok(c) => c.claims,

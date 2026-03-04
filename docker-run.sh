@@ -10,6 +10,8 @@
 #   ./docker-run.sh logs     - 查看所有日志
 #   ./docker-run.sh build    - 构建所有镜像
 #   ./docker-run.sh clean    - 清理容器和镜像
+#   ./docker-run.sh build-frontend  - 构建前端镜像
+#   ./docker-run.sh start-frontend  - 仅启动前端服务
 #===============================================================================
 
 set -e
@@ -51,15 +53,18 @@ MCU OTA 平台 Docker 管理脚本
 用法：$0 <命令> [选项]
 
 命令:
-    start       启动所有服务
-    stop        停止所有服务
-    restart     重启所有服务
-    status      查看服务状态
-    logs        查看所有日志 (支持 -f 参数跟踪)
-    build       构建所有镜像
-    clean       清理容器和镜像
-    pull        拉取最新镜像
-    init        初始化环境（创建 .env.docker 文件）
+    start           启动所有服务
+    stop            停止所有服务
+    restart         重启所有服务
+    status          查看服务状态
+    logs            查看所有日志 (支持 -f 参数跟踪)
+    build           构建所有镜像
+    clean           清理容器和镜像
+    pull            拉取最新镜像
+    init            初始化环境（创建 .env.docker 文件）
+    build-frontend  构建前端镜像
+    start-frontend  仅启动前端服务
+    stop-frontend   仅停止前端服务
 
 选项:
     -h, --help      显示帮助信息
@@ -69,6 +74,8 @@ MCU OTA 平台 Docker 管理脚本
     $0 start            # 启动所有服务
     $0 logs -f          # 跟踪查看日志
     $0 stop             # 停止所有服务
+    $0 build-frontend   # 构建前端镜像
+    $0 start-frontend   # 仅启动前端服务
 
 EOF
 }
@@ -236,6 +243,48 @@ clean_all() {
     print_success "清理完成"
 }
 
+# 构建前端镜像
+build_frontend() {
+    print_info "构建前端 Docker 镜像..."
+
+    cd "${SCRIPT_DIR}/ota-frontend"
+    docker build -t logicpi/ota-frontend:0.1.0 .
+
+    print_success "前端镜像构建完成"
+}
+
+# 仅启动前端服务
+start_frontend() {
+    print_info "启动前端服务..."
+
+    # 检查环境文件
+    if [ ! -f "${ENV_FILE}" ]; then
+        print_warning "环境文件不存在，创建默认配置..."
+        init_env
+    fi
+
+    # 加载环境变量
+    set -a
+    source "${ENV_FILE}"
+    set +a
+
+    cd "${SCRIPT_DIR}/docker"
+    $(get_compose_cmd) up -d ota-frontend
+
+    print_success "前端服务启动完成!"
+    print_info "访问 http://localhost:${FRONTEND_PORT:-8080}"
+}
+
+# 仅停止前端服务
+stop_frontend() {
+    print_info "停止前端服务..."
+
+    cd "${SCRIPT_DIR}/docker"
+    $(get_compose_cmd) stop ota-frontend
+
+    print_success "前端服务已停止"
+}
+
 # 主函数
 main() {
     # 如果没有参数，显示帮助
@@ -275,6 +324,15 @@ main() {
             ;;
         init)
             init_env
+            ;;
+        build-frontend)
+            build_frontend
+            ;;
+        start-frontend)
+            start_frontend
+            ;;
+        stop-frontend)
+            stop_frontend
             ;;
         -h|--help)
             show_help

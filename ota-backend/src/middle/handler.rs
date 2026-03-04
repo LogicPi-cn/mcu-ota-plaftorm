@@ -93,7 +93,7 @@ async fn login_user_handler(
     body: web::Json<LoginUserSchema>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    let query_result = match sqlx::query_as!(User, "SELECT * FROM users WHERE email = $1", body.email)
+    let query_result: Option<User> = match sqlx::query_as!(User, "SELECT * FROM users WHERE email = $1", body.email)
         .fetch_optional(&data.db)
         .await
     {
@@ -106,7 +106,7 @@ async fn login_user_handler(
         }
     };
 
-    let is_valid = query_result.to_owned().and_then(|user| {
+    let is_valid = query_result.and_then(|user| {
         let parsed_hash = PasswordHash::new(&user.password).ok()?;
         Argon2::default()
             .verify_password(body.password.as_bytes(), &parsed_hash)
