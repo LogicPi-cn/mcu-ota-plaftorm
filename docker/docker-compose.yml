@@ -1,32 +1,75 @@
 services:
+  # PostgreSQL 数据库服务
+  ota-database:
+    image: postgres:15-alpine
+    container_name: ota-database
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-craftor}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-3.1415926}
+      POSTGRES_DB: ${POSTGRES_DB:-firmware}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    networks:
+      - ota-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-craftor} -d ${POSTGRES_DB:-firmware}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # OTA 后端 API 服务
   ota-backend:
     image: logicpi/ota-backend:0.6.0
     container_name: ota-backend
+    restart: unless-stopped
     ports:
-      - 20000:20000
+      - "${BACKEND_PORT:-20000}:20000"
     environment:
-      - FW_DB=postgres://craftor:3.1415926@ota-database:5432/firmware
+      DATABASE_URL: postgres://${POSTGRES_USER:-craftor}:${POSTGRES_PASSWORD:-3.1415926}@ota-database:5432/${POSTGRES_DB:-firmware}
+      JWT_SECRET: ${BACKEND_JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      JWT_EXPIRED_IN: ${BACKEND_JWT_EXPIRED_IN:-60}
+      JWT_MAXAGE: ${BACKEND_JWT_MAXAGE:-60}
+      RUST_LOG: info
+      TZ: ${TZ:-Asia/Shanghai}
     depends_on:
-      - ota-database
+      ota-database:
+        condition: service_healthy
+    networks:
+      - ota-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:20000/api/healthchecker"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
+  # OTA Server 服务 (TCP 固件服务器)
   ota-server:
     image: logicpi/ota-server:0.4.2
     container_name: ota-server
+    restart: unless-stopped
     ports:
-      - 9999:9999
+      - "${SERVER_PORT:-9999}:9999"
     environment:
-      - FW_SERVER=http://ota-backend:20000
-      - FW_DB=postgres://craftor:3.1415926@ota-database:5432/firmware
+      FW_SERVER: ${SERVER_FW_SERVER:-http://ota-backend:20000}
+      FW_DB: postgres://${POSTGRES_USER:-craftor}:${POSTGRES_PASSWORD:-3.1415926}@ota-database:5432/${POSTGRES_DB:-firmware}
+      PORT: ${SERVER_PORT:-9999}
+      RUST_LOG: info
+      TZ: ${TZ:-Asia/Shanghai}
     depends_on:
       - ota-backend
       - ota-database
+    networks:
+      - ota-network
 
-  ota-database:
-    image: logicpi/ota-database:0.5.2
-    container_name: ota-database
-    command: postgres -c 'max_connections=1000'
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+networks:
+  ota-network:
+    driver: bridge
 
 volumes:
   pgdata:
+    driver: local
