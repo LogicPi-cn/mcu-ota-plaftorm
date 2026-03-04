@@ -8,7 +8,6 @@ use ota_backend::LOGO;
 
 use log::info;
 use ota_backend::args::Cli;
-// use ota_database::db::Config;
 use ota_database::{db::Database, routes::total::apis};
 use std::env;
 
@@ -23,20 +22,24 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     env_logger::init();
 
-    // let config = Config::init();
-
     // print logo
     println!("{}", LOGO);
     let version = env!("CARGO_PKG_VERSION");
     println!("OTA Backend, Version: {}", version);
 
-    let _fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone());
-    let _port = env::var("PORT").unwrap_or_else(|_| (cli.port as u32).to_string());
-    let _db = Database::new(&_fw_db);
+    let fw_db = env::var("FW_DB").unwrap_or_else(|_| cli.fw_db.clone());
+    let port = env::var("PORT").unwrap_or_else(|_| (cli.port as u32).to_string());
+
+    // Initialize database connection
+    let db = Database::new(&fw_db)
+        .await
+        .expect("Failed to initialize database connection");
 
     // Create a listener
-    let server = format!("0.0.0.0:{}", _port);
+    let server = format!("0.0.0.0:{}", port);
     info!("Server listening on {}", &server);
+
+    let db_data = web::Data::new(db);
 
     HttpServer::new(move || {
         let cors = Cors::default()
@@ -51,10 +54,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(cors)
             .wrap(Logger::default())
-            .app_data(web::Data::new(Database {
-                pool: _db.pool.clone(),
-                // env: config.clone(),
-            }))
+            .app_data(db_data.clone())
             .service(apis())
     })
     .bind(server)?

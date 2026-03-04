@@ -31,12 +31,19 @@ async fn register_user_handler(
     body: web::Json<RegisterUserSchema>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    let exists: bool = sqlx::query("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
+    let exists: bool = match sqlx::query("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)")
         .bind(body.email.to_owned())
         .fetch_one(&data.db)
         .await
-        .unwrap()
-        .get(0);
+    {
+        Ok(row) => row.get(0),
+        Err(_) => {
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Database error"
+            }));
+        }
+    };
 
     if exists {
         return HttpResponse::Conflict().json(
@@ -45,10 +52,18 @@ async fn register_user_handler(
     }
 
     let salt = SaltString::generate(&mut OsRng);
-    let hashed_password = Argon2::default()
+    let hashed_password = match Argon2::default()
         .hash_password(body.password.as_bytes(), &salt)
-        .expect("Error while hashing password")
-        .to_string();
+    {
+        Ok(hash) => hash.to_string(),
+        Err(_) => {
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Failed to hash password"
+            }));
+        }
+    };
+
     let query_result = sqlx::query_as!(
         User,
         "INSERT INTO users (name,email,password) VALUES ($1, $2, $3) RETURNING *",
@@ -67,9 +82,9 @@ async fn register_user_handler(
 
             return HttpResponse::Ok().json(user_response);
         }
-        Err(e) => {
+        Err(_) => {
             return HttpResponse::InternalServerError()
-                .json(serde_json::json!({"status": "error","message": format!("{:?}", e)}));
+                .json(serde_json::json!({"status": "fail","message": "Failed to create user"}));
         }
     }
 }
@@ -78,17 +93,26 @@ async fn login_user_handler(
     body: web::Json<LoginUserSchema>,
     data: web::Data<AppState>,
 ) -> impl Responder {
-    let query_result = sqlx::query_as!(User, "SELECT * FROM users WHERE email = $1", body.email)
+    let query_result = match sqlx::query_as!(User, "SELECT * FROM users WHERE email = $1", body.email)
         .fetch_optional(&data.db)
         .await
-        .unwrap();
+    {
+        Ok(result) => result,
+        Err(_) => {
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Database error"
+            }));
+        }
+    };
 
-    let is_valid = query_result.to_owned().map_or(false, |user| {
-        let parsed_hash = PasswordHash::new(&user.password).unwrap();
+    let is_valid = query_result.to_owned().and_then(|user| {
+        let parsed_hash = PasswordHash::new(&user.password).ok()?;
         Argon2::default()
             .verify_password(body.password.as_bytes(), &parsed_hash)
-            .map_or(false, |_| true)
-    });
+            .ok()?;
+        Some(user)
+    }).is_some();
 
     if !is_valid {
         return HttpResponse::BadRequest()
@@ -106,12 +130,19 @@ async fn login_user_handler(
         iat,
     };
 
-    let token = encode(
+    let token = match encode(
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(data.env.jwt_secret.as_ref()),
-    )
-    .unwrap();
+    ) {
+        Ok(token) => token,
+        Err(_) => {
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Failed to generate token"
+            }));
+        }
+    };
 
     let cookie = Cookie::build("token", token.to_owned())
         .path("/")
@@ -144,12 +175,26 @@ async fn get_me_handler(
     _: jwt_auth::JwtMiddleware,
 ) -> impl Responder {
     let ext = req.extensions();
-    let user_id = ext.get::<uuid::Uuid>().unwrap();
+    let user_id = match ext.get::<uuid::Uuid>() {
+        Some(id) => id,
+        None => return HttpResponse::InternalServerError().json(json!({
+            "status": "fail",
+            "message": "Failed to get user ID"
+        })),
+    };
 
-    let user = sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
+    let user = match sqlx::query_as!(User, "SELECT * FROM users WHERE id = $1", user_id)
         .fetch_one(&data.db)
         .await
-        .unwrap();
+    {
+        Ok(user) => user,
+        Err(_) => {
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Failed to get user"
+            }));
+        }
+    };
 
     let json_response = serde_json::json!({
         "status":  "success",
@@ -169,8 +214,8 @@ fn filter_user_record(user: &User) -> FilteredUser {
         photo: user.photo.to_owned(),
         role: user.role.to_owned(),
         verified: user.verified,
-        createdAt: user.created_at.unwrap(),
-        updatedAt: user.updated_at.unwrap(),
+        createdAt: user.created_at.unwrap_or_default(),
+        updatedAt: user.updated_at.unwrap_or_default(),
     }
 }
 

@@ -10,6 +10,7 @@ use ota_database::{
     },
 };
 use std::error::Error;
+use std::sync::Arc;
 use tokio::{io::AsyncReadExt, net::TcpStream};
 
 use crate::{
@@ -17,15 +18,19 @@ use crate::{
     ErrorCode, PackageType,
 };
 
+
+/// Buffer size for TCP communication
+const BUFFER_SIZE: usize = 1024;
+
 /// 处理tcp请求入口
 pub async fn handle_client(
     mut socket: TcpStream,
-    fw_data_all: &Vec<FirmwareData>,
+    fw_data_all: Arc<tokio::sync::Mutex<Vec<FirmwareData>>>,
     fw_server: &str,
 ) -> Result<(), Box<dyn Error>> {
     info!("New client connected: {:?}", socket.peer_addr()?);
 
-    let mut buffer = [0; 1024];
+    let mut buffer = [0; BUFFER_SIZE];
 
     loop {
         // 从客户端读取数据
@@ -45,7 +50,7 @@ pub async fn handle_client(
         // 处理接收到的数据
         let request = &buffer[..bytes_read].to_vec();
 
-        package_process(request, &mut socket, &fw_data_all, &fw_server).await?;
+        package_process(request, &mut socket, Arc::clone(&fw_data_all), &fw_server).await?;
 
         // 清空缓冲区
         buffer.fill(0);
@@ -60,7 +65,7 @@ pub async fn handle_client(
 async fn package_process(
     request: &[u8],
     socket: &mut TcpStream,
-    fw_data_all: &Vec<FirmwareData>,
+    fw_data_all: Arc<tokio::sync::Mutex<Vec<FirmwareData>>>,
     fw_server: &str,
 ) -> Result<(), Box<dyn Error>> {
     // 最低长度为7
@@ -85,17 +90,17 @@ async fn package_process(
                 PackageType::FirmwareQuery => {
                     // 固件代号
                     let _code = (request[5] as u16) << 8 | request[6] as u16;
-                    process_fw_query_request(request, socket, _code as i32, fw_data_all).await?
+                    process_fw_query_request(request, socket, _code as i32, Arc::clone(&fw_data_all)).await?
                 }
                 PackageType::FirmwareDownload => {
                     // 固件代号
                     let _code = (request[5] as u16) << 8 | request[6] as u16;
-                    process_fw_download_request(request, socket, _code as i32, fw_data_all).await?
+                    process_fw_download_request(request, socket, _code as i32, Arc::clone(&fw_data_all)).await?
                 }
                 PackageType::DownloadEnd => {
                     // 固件代号
                     let _code = (request[5] as u16) << 8 | request[6] as u16;
-                    process_fw_end_request(request, socket, _code as i32, fw_data_all, fw_server)
+                    process_fw_end_request(request, socket, _code as i32, Arc::clone(&fw_data_all), fw_server)
                         .await?
                 }
                 PackageType::QueryConfig => {
@@ -151,10 +156,11 @@ async fn process_fw_query_request(
     _request: &[u8],
     socket: &mut TcpStream,
     code: i32,
-    fw_data_all: &Vec<FirmwareData>,
+    fw_data_all: Arc<tokio::sync::Mutex<Vec<FirmwareData>>>,
 ) -> Result<(), Box<dyn Error>> {
     info!("[Command] Query Firmware Info.");
-    if let Some(fw_data) = find_latest_fw(&fw_data_all, code) {
+    let fw_data_lock = fw_data_all.lock().await;
+    if let Some(fw_data) = find_latest_fw(&fw_data_lock, code) {
         send_fw_info(
             &FirmwareInfo {
                 code: fw_data.fwcode,
@@ -182,7 +188,7 @@ async fn process_fw_download_request(
     request: &[u8],
     socket: &mut TcpStream,
     _code: i32,
-    fw_data_all: &Vec<FirmwareData>,
+    fw_data_all: Arc<tokio::sync::Mutex<Vec<FirmwareData>>>,
 ) -> Result<(), Box<dyn Error>> {
     info!("[Command] Download Firmware.");
 
@@ -195,7 +201,8 @@ async fn process_fw_download_request(
     let _index = (request[10] as u16) << 8 | request[11] as u16; // 切片序号
     let _slice = (request[12] as u16) << 8 | request[13] as u16; // 切片大小，一般默认512
 
-    if let Some(fw_data) = find_firmware(fw_data_all, _code as i32, _version) {
+    let fw_data_lock = fw_data_all.lock().await;
+    if let Some(fw_data) = find_firmware(&fw_data_lock, _code as i32, _version) {
         let data = slice_fw_data_from_vector(&fw_data.fwdata, _index as usize, _slice as usize);
 
         match data {
@@ -243,7 +250,7 @@ async fn process_fw_end_request(
     request: &[u8],
     _socket: &mut TcpStream,
     _code: i32,
-    _fw_data_all: &Vec<FirmwareData>,
+    _fw_data_all: Arc<tokio::sync::Mutex<Vec<FirmwareData>>>,
     fw_server: &str,
 ) -> Result<(), Box<dyn Error>> {
     info!("[Command] Download Firmware Over.");

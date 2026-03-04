@@ -1,18 +1,14 @@
 use std::fmt;
 
-use crate::{
-    db::DbError,
-    models::basic::{CrudOperations, HasId},
-    schema::config_history,
-};
+use crate::db::DatabaseError;
+use crate::models::basic::{CrudOperations, HasId};
 use chrono::{NaiveDateTime, Utc};
-use diesel::{AsChangeset, Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
+use sqlx::{FromRow, PgPool};
 
 use super::basic::random_i32;
 
-#[derive(Deserialize, Serialize, Queryable, Debug, AsChangeset, PartialEq, Default)]
-#[diesel(table_name = config_history)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Default, FromRow)]
 pub struct ConfigHistory {
     pub id: i32,
     pub group_id: i32,
@@ -43,8 +39,7 @@ impl fmt::Display for ConfigHistory {
     }
 }
 
-#[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq, Clone)]
-#[diesel(table_name = config_history)]
+#[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
 pub struct NewConfigHistory {
     pub group_id: i32,
     pub op_code: i32,
@@ -80,8 +75,7 @@ impl fmt::Display for NewConfigHistory {
     }
 }
 
-#[derive(Debug, Deserialize, AsChangeset, Serialize, Default, Clone)]
-#[diesel(table_name = config_history )]
+#[derive(Debug, Deserialize, Serialize, Default, Clone, PartialEq)]
 pub struct UpdateConfigHistory {
     pub group_id: i32,
     pub op_code: i32,
@@ -119,43 +113,76 @@ impl fmt::Display for UpdateConfigHistory {
     }
 }
 
+#[async_trait::async_trait]
 impl CrudOperations<ConfigHistory, NewConfigHistory, UpdateConfigHistory> for ConfigHistory {
-    fn all(conn: &mut PgConnection) -> Result<Vec<ConfigHistory>, DbError> {
-        let items = config_history::table.load::<Self>(conn)?;
+    async fn all(pool: &PgPool) -> Result<Vec<ConfigHistory>, DatabaseError> {
+        let items = sqlx::query_as::<_, ConfigHistory>("SELECT * FROM config_history")
+            .fetch_all(pool)
+            .await?;
         Ok(items)
     }
 
-    fn find(target_id: i32, conn: &mut PgConnection) -> Result<ConfigHistory, DbError> {
-        let result = config_history::table
-            .find(target_id)
-            .first::<ConfigHistory>(conn)?;
+    async fn find(target_id: i32, pool: &PgPool) -> Result<ConfigHistory, DatabaseError> {
+        let result =
+            sqlx::query_as::<_, ConfigHistory>("SELECT * FROM config_history WHERE id = $1")
+                .bind(target_id)
+                .fetch_one(pool)
+                .await?;
         Ok(result)
     }
 
-    fn create(data: NewConfigHistory, conn: &mut PgConnection) -> Result<ConfigHistory, DbError> {
-        let result = diesel::insert_into(config_history::table)
-            .values(&data)
-            .get_result(conn)
-            .expect("Error on Create");
+    async fn create(data: NewConfigHistory, pool: &PgPool) -> Result<ConfigHistory, DatabaseError> {
+        let result = sqlx::query_as::<_, ConfigHistory>(
+            r#"
+            INSERT INTO config_history (group_id, op_code, sync_ts, interval, t_max, t_min, human)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING *
+            "#,
+        )
+        .bind(data.group_id)
+        .bind(data.op_code)
+        .bind(data.sync_ts)
+        .bind(data.interval)
+        .bind(data.t_max)
+        .bind(data.t_min)
+        .bind(data.human)
+        .fetch_one(pool)
+        .await?;
         Ok(result)
     }
 
-    fn update(
+    async fn update(
         id: i32,
         data: UpdateConfigHistory,
-        conn: &mut PgConnection,
-    ) -> Result<ConfigHistory, DbError> {
-        let result = diesel::update(config_history::table.find(id))
-            .set(&data)
-            .get_result(conn)
-            .expect("Error on Update");
+        pool: &PgPool,
+    ) -> Result<ConfigHistory, DatabaseError> {
+        let result = sqlx::query_as::<_, ConfigHistory>(
+            r#"
+            UPDATE config_history
+            SET group_id = $1, op_code = $2, sync_ts = $3, interval = $4, t_max = $5, t_min = $6, human = $7, updated_at = $8
+            WHERE id = $9
+            RETURNING *
+            "#,
+        )
+        .bind(data.group_id)
+        .bind(data.op_code)
+        .bind(data.sync_ts)
+        .bind(data.interval)
+        .bind(data.t_max)
+        .bind(data.t_min)
+        .bind(data.human)
+        .bind(data.updated_at.unwrap_or_else(|| Utc::now().naive_utc()))
+        .bind(id)
+        .fetch_one(pool)
+        .await?;
         Ok(result)
     }
 
-    fn delete(id: i32, conn: &mut PgConnection) -> Result<usize, DbError> {
-        let num_deleted = diesel::delete(config_history::table.find(id))
-            .execute(conn)
-            .expect("Error on Delete");
-        Ok(num_deleted)
+    async fn delete(id: i32, pool: &PgPool) -> Result<u64, DatabaseError> {
+        let result = sqlx::query("DELETE FROM config_history WHERE id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
+        Ok(result.rows_affected())
     }
 }

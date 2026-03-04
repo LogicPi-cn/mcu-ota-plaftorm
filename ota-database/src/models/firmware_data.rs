@@ -1,13 +1,10 @@
 use std::fmt;
 
-use crate::{
-    db::DbError,
-    models::basic::{CrudOperations, HasId},
-    schema::firmware_data,
-};
+use crate::db::DatabaseError;
+use crate::models::basic::{CrudOperations, HasId};
 use chrono::{NaiveDateTime, Utc};
-use diesel::{AsChangeset, Insertable, PgConnection, QueryDsl, Queryable, RunQueryDsl};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
+use sqlx::{FromRow, PgPool};
 
 use super::basic::random_i32;
 
@@ -28,8 +25,7 @@ pub struct FirmwareInfo {
     pub path: String, // 文件路径
 }
 
-#[derive(Deserialize, Serialize, Queryable, Debug, AsChangeset, PartialEq, Default, Eq, Clone)]
-#[diesel(table_name = firmware_data)]
+#[derive(Deserialize, Serialize, Debug, PartialEq, Default, Eq, Clone, FromRow)]
 pub struct FirmwareData {
     pub id: i32,
     pub fwcode: i32,
@@ -59,8 +55,7 @@ impl fmt::Display for FirmwareData {
     }
 }
 
-#[derive(Debug, Insertable, Deserialize, Serialize, Default, PartialEq, Clone, Eq)]
-#[diesel(table_name = firmware_data)]
+#[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone, Eq)]
 pub struct NewFirmwareData {
     pub fwcode: i32,
     pub version_m: i32,
@@ -93,8 +88,7 @@ impl fmt::Display for NewFirmwareData {
     }
 }
 
-#[derive(Debug, Deserialize, AsChangeset, Serialize, Default, Clone)]
-#[diesel(table_name = firmware_data )]
+#[derive(Debug, Deserialize, Serialize, Default, Clone)]
 pub struct UpdateFirmwareData {
     pub fwcode: i32,
     pub version_m: i32,
@@ -130,44 +124,74 @@ impl fmt::Display for UpdateFirmwareData {
     }
 }
 
+#[async_trait::async_trait]
 impl CrudOperations<FirmwareData, NewFirmwareData, UpdateFirmwareData> for FirmwareData {
-    fn all(conn: &mut PgConnection) -> Result<Vec<FirmwareData>, DbError> {
-        let items = firmware_data::table.load::<Self>(conn)?;
+    async fn all(pool: &PgPool) -> Result<Vec<FirmwareData>, DatabaseError> {
+        let items = sqlx::query_as::<_, FirmwareData>("SELECT * FROM firmware_data")
+            .fetch_all(pool)
+            .await?;
         Ok(items)
     }
 
-    fn find(target_id: i32, conn: &mut PgConnection) -> Result<FirmwareData, DbError> {
-        let result = firmware_data::table
-            .find(target_id)
-            .first::<FirmwareData>(conn)?;
+    async fn find(target_id: i32, pool: &PgPool) -> Result<FirmwareData, DatabaseError> {
+        let result = sqlx::query_as::<_, FirmwareData>("SELECT * FROM firmware_data WHERE id = $1")
+            .bind(target_id)
+            .fetch_one(pool)
+            .await?;
         Ok(result)
     }
 
-    fn create(data: NewFirmwareData, conn: &mut PgConnection) -> Result<FirmwareData, DbError> {
-        let result = diesel::insert_into(firmware_data::table)
-            .values(&data)
-            .get_result(conn)
-            .expect("Error on Create");
+    async fn create(data: NewFirmwareData, pool: &PgPool) -> Result<FirmwareData, DatabaseError> {
+        let result = sqlx::query_as::<_, FirmwareData>(
+            r#"
+            INSERT INTO firmware_data (fwcode, version_m, version_n, version_l, fwsize, fwdata)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+            "#
+        )
+        .bind(data.fwcode)
+        .bind(data.version_m)
+        .bind(data.version_n)
+        .bind(data.version_l)
+        .bind(data.fwsize)
+        .bind(data.fwdata)
+        .fetch_one(pool)
+        .await?;
         Ok(result)
     }
 
-    fn update(
+    async fn update(
         id: i32,
         data: UpdateFirmwareData,
-        conn: &mut PgConnection,
-    ) -> Result<FirmwareData, DbError> {
-        let result = diesel::update(firmware_data::table.find(id))
-            .set(&data)
-            .get_result(conn)
-            .expect("Error on Update");
+        pool: &PgPool,
+    ) -> Result<FirmwareData, DatabaseError> {
+        let result = sqlx::query_as::<_, FirmwareData>(
+            r#"
+            UPDATE firmware_data
+            SET fwcode = $1, version_m = $2, version_n = $3, version_l = $4, fwsize = $5, fwdata = $6, updated_at = $7
+            WHERE id = $8
+            RETURNING *
+            "#
+        )
+        .bind(data.fwcode)
+        .bind(data.version_m)
+        .bind(data.version_n)
+        .bind(data.version_l)
+        .bind(data.fwsize)
+        .bind(data.fwdata)
+        .bind(data.updated_at.unwrap_or_else(|| Utc::now().naive_utc()))
+        .bind(id)
+        .fetch_one(pool)
+        .await?;
         Ok(result)
     }
 
-    fn delete(id: i32, conn: &mut PgConnection) -> Result<usize, DbError> {
-        let num_deleted = diesel::delete(firmware_data::table.find(id))
-            .execute(conn)
-            .expect("Error on Delete");
-        Ok(num_deleted)
+    async fn delete(id: i32, pool: &PgPool) -> Result<u64, DatabaseError> {
+        let result = sqlx::query("DELETE FROM firmware_data WHERE id = $1")
+            .bind(id)
+            .execute(pool)
+            .await?;
+        Ok(result.rows_affected())
     }
 }
 

@@ -99,7 +99,15 @@ async fn register(
     body: web::Json<RegisterUserSchema>,
     data: web::Data<Database>,
 ) -> Result<HttpResponse, Error> {
-    let mut conn = data.pool.get().expect("Couldn't get DB connection");
+    let mut conn = match data.pool.get() {
+        Ok(conn) => conn,
+        Err(_) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Database connection failed"
+            })));
+        }
+    };
 
     let exists = User::find_by_email(&body.email.to_string().to_lowercase(), &mut conn);
 
@@ -116,10 +124,17 @@ async fn register(
     }
 
     let salt = SaltString::generate(&mut OsRng);
-    let hashed_password = Argon2::default()
+    let hashed_password = match Argon2::default()
         .hash_password(body.password.as_bytes(), &salt)
-        .expect("Error while hashing password")
-        .to_string();
+    {
+        Ok(hash) => hash.to_string(),
+        Err(_) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Failed to hash password"
+            })));
+        }
+    };
 
     let new_user = NewUser {
         username: body.username.to_string(),
@@ -127,7 +142,15 @@ async fn register(
         password: hashed_password,
     };
 
-    let user = User::create(new_user, &mut conn).expect("Error inserting new user");
+    let user = match User::create(new_user, &mut conn) {
+        Ok(user) => user,
+        Err(_) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Failed to create user"
+            })));
+        }
+    };
 
     let user_response = json!({
         "status": "success",
@@ -144,7 +167,15 @@ async fn login(
     body: web::Json<LoginUserSchema>,
     data: web::Data<Database>,
 ) -> Result<HttpResponse, Error> {
-    let mut conn = data.pool.get().expect("Couldn't get DB connection");
+    let mut conn = match data.pool.get() {
+        Ok(conn) => conn,
+        Err(_) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Database connection failed"
+            })));
+        }
+    };
 
     let user = match User::find_by_email(&body.email.to_string().to_lowercase(), &mut conn) {
         Ok(user) => user,
@@ -155,7 +186,15 @@ async fn login(
         }
     };
 
-    let parsed_hash = PasswordHash::new(&user.password).unwrap();
+    let parsed_hash = match PasswordHash::new(&user.password) {
+        Ok(hash) => hash,
+        Err(_) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Invalid password hash format"
+            })));
+        }
+    };
 
     match Argon2::default().verify_password(body.password.as_bytes(), &parsed_hash) {
         Ok(_) => {}
@@ -176,12 +215,19 @@ async fn login(
         iat,
     };
 
-    let token = encode(
+    let token = match encode(
         &Header::default(),
         &claims,
         &EncodingKey::from_secret(data.env.jwt_secret.as_ref()),
-    )
-    .unwrap();
+    ) {
+        Ok(token) => token,
+        Err(_) => {
+            return Ok(HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Failed to generate token"
+            })));
+        }
+    };
 
     let cookie = Cookie::build("token", token.to_owned())
         .path("/")
@@ -215,10 +261,33 @@ async fn get_me(
     _: jwt_auth::JwtMiddleware,
 ) -> impl Responder {
     let ext = req.extensions();
-    let user_id = ext.get::<uuid::Uuid>().unwrap();
+    let user_id = match ext.get::<uuid::Uuid>() {
+        Some(id) => id,
+        None => return HttpResponse::InternalServerError().json(json!({
+            "status": "fail",
+            "message": "Failed to get user ID"
+        })),
+    };
 
-    let mut conn = data.pool.get().expect("Couldn't get DB connection");
-    let user = User::find_by_id(&user_id, &mut conn).unwrap();
+    let mut conn = match data.pool.get() {
+        Ok(conn) => conn,
+        Err(_) => {
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Database connection failed"
+            }));
+        }
+    };
+
+    let user = match User::find_by_id(&user_id, &mut conn) {
+        Ok(user) => user,
+        Err(_) => {
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "fail",
+                "message": "Failed to get user"
+            }));
+        }
+    };
 
     let json_response = serde_json::json!({
         "status":  "success",

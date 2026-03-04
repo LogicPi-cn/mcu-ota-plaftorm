@@ -3,18 +3,16 @@ name = "ota-server"
 version = "0.4.2"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-reqwest = { version = "0.11.23", features = ["json"] }
-crc = "3.0.1"
-log = "0.4.20"
-tokio = { version = "1.35.1", features = ["full"] }
-pretty_env_logger = "0.5.0"
-clap = { version = "4.4.12", features = ["derive"] }
-regex = "1.10.2"
-rand = "0.8.5"
-serde = { version = "1.0.195", features = ["serde_derive"] }
+tokio.workspace = true
+reqwest = { workspace = true, features = ["native-tls-vendored"] }
+log.workspace = true
+pretty_env_logger.workspace = true
+clap.workspace = true
+regex.workspace = true
+rand.workspace = true
+serde.workspace = true
+chrono.workspace = true
+crc.workspace = true
 
 ota-database = { path = "../ota-database" }
-chrono = { version = "0.4.33", features = ["serde"] }

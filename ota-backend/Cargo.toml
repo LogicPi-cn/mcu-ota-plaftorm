@@ -3,35 +3,27 @@ name = "ota-backend"
 version = "0.6.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-actix-files = "0.6.5"
-actix-web = "4.4.1"
-serde = { version = "1.0.195", features = ["serde_derive"] }
-tokio = { version = "1", features = ["full"] }
-log = "0.4.20"
-pretty_env_logger = "0.5.0"
-clap = { version = "4.4.12", features = ["derive"] }
-regex = "1.10.2"
+actix-files.workspace = true
+actix-web.workspace = true
+serde.workspace = true
+tokio.workspace = true
+log.workspace = true
+pretty_env_logger.workspace = true
+clap.workspace = true
+regex.workspace = true
+serde_json.workspace = true
+env_logger.workspace = true
+chrono.workspace = true
+actix-rt.workspace = true
+futures-util.workspace = true
+jsonwebtoken.workspace = true
+futures.workspace = true
+actix-cors.workspace = true
+argon2.workspace = true
+dotenv.workspace = true
+rand_core.workspace = true
+sqlx.workspace = true
+uuid.workspace = true
 
-serde_json = "1.0.111"
 ota-database = { path = "../ota-database" }
-env_logger = "0.11.1"
-chrono = "0.4.31"
-actix-rt = "2.9.0"
-diesel = { version = "2.1.4", features = ["postgres", "chrono", "r2d2"] }
-futures-util = "0.3.30"
-jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
-futures = "0.3.30"
-actix-cors = "0.7.0"
-argon2 = "0.5.3"
-dotenv = "0.15.0"
-rand_core = { version = "0.9.3", features = ["std"] }
-sqlx = { version = "0.7.3", features = [
-    "runtime-async-std-native-tls",
-    "postgres",
-    "chrono",
-    "uuid",
-] }
-uuid = { version = "1.2.2", features = ["serde", "v4"] }

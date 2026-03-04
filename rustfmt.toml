@@ -1,0 +1,22 @@
+edition = "2021"
+
+# Rustfmt configuration
+
+# Use tab indentation
+hard_tabs = true
+
+# Maximum line length
+max_width = 100
+
+# Merge derive attributes
+merge_derives = true
+
+# Use field init shorthand
+use_field_init_shorthand = true
+
+# Format code blocks
+fn_args_layout = "Tall"
+
+# Import formatting
+imports_granularity = "Crate"
+group_imports = "StdExternalCrate"

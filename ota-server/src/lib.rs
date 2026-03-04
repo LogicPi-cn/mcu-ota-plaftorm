@@ -2,6 +2,15 @@ pub mod args;
 pub mod package;
 pub mod process_pg;
 
+/// LogicPi Logo
+pub const LOGO: &str = r"
+    __    ____   ______ ____ ______ ____   ____
+   / /   / __ \ / ____//  _// ____// __ \ /  _/
+  / /   / / / // / __  / / / /    / /_/ / / /
+ / /___/ /_/ // /_/ /_/ / / /___ / ____/_/ /
+/_____/\____/ \____//___/ \____//_/    /___/
+";
+
 #[derive(Debug, Clone, Copy)]
 pub enum PackageType {
     FirmwareQuery = 0xA1,    // 固件查询

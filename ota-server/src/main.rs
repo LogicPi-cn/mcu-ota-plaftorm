@@ -1,20 +1,10 @@
 use clap::Parser;
 use log::{error, info};
-use ota_database::from_pg::read_all_fw_from_pg;
-use ota_server::{args::Cli, process_pg::handle_client};
+use ota_server::{args::Cli, process_pg::handle_client, LOGO};
 
 use std::sync::Arc;
 use std::{env, error::Error};
 use tokio::net::TcpListener;
-
-/// LogicPi Logo
-const LOGO: &str = r"
-    __    ____   ______ ____ ______ ____   ____
-   / /   / __ \ / ____//  _// ____// __ \ /  _/
-  / /   / / / // / __  / / / /    / /_/ / / /  
- / /___/ /_/ // /_/ /_/ / / /___ / ____/_/ /   
-/_____/\____/ \____//___/ \____//_/    /___/   
-";
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -40,19 +30,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let listener = TcpListener::bind(&server).await?;
     info!("Server listening on {}", &server);
 
+    // Create an Arc Mutex to hold firmware data
+    let fw_data_all = Arc::new(tokio::sync::Mutex::new(Vec::new()));
+
+    // Spawn the background refresh task
+    let fw_server_bg = Arc::clone(&fw_server);
+    let fw_data_bg = Arc::clone(&fw_data_all);
+    tokio::spawn(async move {
+        ota_database::from_pg::refresh_firmware_data(&fw_server_bg, fw_data_bg).await;
+    });
+
     loop {
         // 接受一个新的客户端连接
         let (socket, _) = listener.accept().await?;
 
         // 原子变量引用
         let fw_server_clone = Arc::clone(&fw_server);
-
-        // 刷新固件列表
-        let _fw_data_all = Arc::new(read_all_fw_from_pg(&fw_server_clone).await.unwrap());
+        let fw_data_clone = Arc::clone(&fw_data_all);
 
         // 使用tokio的spawn函数，在独立的任务中处理每个客户端连接
         tokio::spawn(async move {
-            if let Err(error) = handle_client(socket, &_fw_data_all, &fw_server_clone).await {
+            if let Err(error) = handle_client(socket, fw_data_clone, &fw_server_clone).await {
                 error!("Error handling client: {}", error);
             }
         });
