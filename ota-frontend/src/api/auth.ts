@@ -33,6 +33,6 @@ export async function logout(): Promise<void> {
  * 获取当前用户信息
  */
 export async function getCurrentUser(): Promise<UserData> {
-  const response = await apiClient.get<ApiResponse<UserData>>('/users/me');
+  const response = await apiClient.get<ApiResponse<UserData>>('/auth/me');
   return response.data.data!;
 }
