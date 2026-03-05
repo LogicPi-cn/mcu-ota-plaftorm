@@ -78,6 +78,12 @@
             失败
           </a-tag>
         </template>
+        <template #fwcode="{ record }">
+          0x{{ record.fwcode.toString(16).toUpperCase().padStart(4, '0') }}
+        </template>
+        <template #version="{ record }">
+          {{ record.version_m }}.{{ record.version_n }}.{{ record.version_l }}
+        </template>
         <template #created_at="{ record }">
           {{ formatDate(record.created_at) }}
         </template>

@@ -30,7 +30,7 @@
         stripe
       >
         <template #fwcode="{ record }">
-          0x{{ record.fwcode.toString(16).toUpperCase().padStart(2, '0') }}
+          0x{{ record.fwcode.toString(16).toUpperCase().padStart(4, '0') }}
         </template>
         <template #version="{ record }">
           {{ record.version_m }}.{{ record.version_n }}.{{ record.version_l }}
