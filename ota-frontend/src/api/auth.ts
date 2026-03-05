@@ -11,8 +11,8 @@ import type {
  * 用户登录
  */
 export async function login(data: LoginRequest): Promise<LoginResponse> {
-  const response = await apiClient.post<ApiResponse<LoginResponse>>('/auth/login', data);
-  return response.data.data!;
+  const response = await apiClient.post<LoginResponse>('/auth/login', data);
+  return response.data;
 }
 
 /**
