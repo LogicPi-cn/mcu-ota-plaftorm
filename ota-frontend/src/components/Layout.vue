@@ -137,16 +137,26 @@ const handleLogout = async () => {
     background: #001529;
 
     :deep(.arco-menu-item) {
-      color: rgba(255, 255, 255, 0.65);
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 14px;
 
       &:hover {
         color: #fff;
+        background-color: rgba(255, 255, 255, 0.08);
       }
 
       &.arco-menu-selected {
         color: #fff;
         background: #165dff;
+
+        &:hover {
+          background: #165dff;
+        }
       }
+    }
+
+    :deep(.arco-menu-item-icon) {
+      font-size: 16px;
     }
   }
 }
