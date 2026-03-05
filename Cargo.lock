@@ -1413,7 +1413,6 @@ dependencies = [
 name = "fw-uploader"
 version = "0.2.0"
 dependencies = [
- "base64 0.22.1",
  "chrono",
  "clap",
  "log",

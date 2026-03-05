@@ -289,8 +289,14 @@ const validateFwcode = () => {
   }
 
   const numValue = parseInt(hexValue, 16);
-  if (numValue < 0 || numValue > 255) {
-    fwcodeError.value = '固件代号必须在 0-255 范围内';
+  if (isNaN(numValue) || numValue < 0 || numValue > 0xFFFF) {
+    fwcodeError.value = '固件代号必须在 0x0000-0xFFFF 范围内';
+    return false;
+  }
+
+  // 检查是否超过 4 位十六进制数
+  if (hexValue.length > 4) {
+    fwcodeError.value = '固件代号最多 4 位十六进制数';
     return false;
   }
 

@@ -21,16 +21,16 @@ export async function getFirmwareById(id: number): Promise<FirmwareData> {
  * 上传新固件
  */
 export async function uploadFirmware(data: NewFirmwareData): Promise<FirmwareData> {
-  const response = await apiClient.post<ApiResponse<FirmwareData>>('/firmware', data);
-  return response.data.data!;
+  const response = await apiClient.post<FirmwareData>('/firmware', data);
+  return response.data;
 }
 
 /**
  * 更新固件
  */
 export async function updateFirmware(id: number, data: UpdateFirmwareData): Promise<FirmwareData> {
-  const response = await apiClient.patch<ApiResponse<FirmwareData>>(`/firmware/${id}`, data);
-  return response.data.data!;
+  const response = await apiClient.patch<FirmwareData>(`/firmware/${id}`, data);
+  return response.data;
 }
 
 /**

@@ -56,6 +56,7 @@ export interface NewFirmwareData {
   version_m: number;
   version_n: number;
   version_l: number;
+  fwsize?: number;  // 可选，后端会自动计算
   fwdata: number[];
 }
 
@@ -64,6 +65,7 @@ export interface UpdateFirmwareData {
   version_m?: number;
   version_n?: number;
   version_l?: number;
+  fwsize?: number;
   fwdata?: number[];
 }
 

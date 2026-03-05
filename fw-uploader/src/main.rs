@@ -1,4 +1,3 @@
-use base64::Engine;
 use clap::Parser;
 use ota_database::models::firmware_data::{
     find_firmware, find_latest_fw, FirmwareVersion, NewFirmwareData, UpdateFirmwareData,
@@ -12,8 +11,6 @@ use std::env;
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
-
-use base64::engine::general_purpose;
 use tokio::runtime::Runtime;
 
 fn main() {
@@ -102,13 +99,7 @@ fn main() {
             }
 
             // 获取文件大小
-            let fwsize = match std::fs::metadata(file_path) {
-                Ok(metadata) => metadata.len() as i32,
-                Err(e) => {
-                    error!("Failed to get file metadata: {}", e);
-                    return;
-                }
-            };
+            let fwsize = buf.len() as i32;
 
             let version = FirmwareVersion {
                 m: version_m,
@@ -116,14 +107,14 @@ fn main() {
                 l: version_l,
             };
 
-            // 创建 FirmwareData 实例
+            // 创建 FirmwareData 实例 - 直接发送原始字节数据
             let new_data = NewFirmwareData {
                 fwcode,
                 version_m,
                 version_n,
                 version_l,
                 fwsize,
-                fwdata: general_purpose::STANDARD.encode(&buf).into(),
+                fwdata: buf.clone(),
             };
 
             // 创建待更新的 UpdateFirmwareData
@@ -133,7 +124,7 @@ fn main() {
                 version_n,
                 version_l,
                 fwsize,
-                fwdata: general_purpose::STANDARD.encode(&buf).into(),
+                fwdata: buf,
                 updated_at: Some(Utc::now().naive_utc()),
             };
 
