@@ -24,9 +24,10 @@
       <!-- 固件列表表格 -->
       <a-table
         :columns="columns"
-        :data="filteredFirmwareList"
+        :data="paginatedFirmwareList"
         :loading="loading"
         :pagination="pagination"
+        :total="filteredFirmwareList.length"
         stripe
       >
         <template #fwcode="{ record }">
@@ -178,9 +179,15 @@ const isFormValid = computed(() => {
 });
 
 const pagination = reactive({
+  current: 1,
   pageSize: 10,
+  pageSizeOptions: [10, 20, 50, 100],
   showTotal: true,
-  showPageSize: true,
+  showJumper: true,
+  onChange: (page: number, pageSize: number) => {
+    pagination.current = page;
+    pagination.pageSize = pageSize;
+  },
 });
 
 const columns = [
@@ -205,6 +212,16 @@ const filteredFirmwareList = computed(() => {
       item.id.toString().includes(keyword)
     );
   });
+});
+
+// 分页后的数据
+const paginatedFirmwareList = computed(() => {
+  const filtered = filteredFirmwareList.value;
+  const current = pagination.current;
+  const pageSize = pagination.pageSize;
+  const start = (current - 1) * pageSize;
+  const end = start + pageSize;
+  return filtered.slice(start, end);
 });
 
 const detailData = computed(() => {

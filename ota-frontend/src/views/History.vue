@@ -56,9 +56,10 @@
       <!-- 历史记录表格 -->
       <a-table
         :columns="columns"
-        :data="filteredHistoryList"
+        :data="paginatedHistoryList"
         :loading="loading"
         :pagination="pagination"
+        :total="filteredHistoryList.length"
         stripe
         :bordered="false"
       >
@@ -109,9 +110,15 @@ const filters = reactive({
 });
 
 const pagination = reactive({
+  current: 1,
   pageSize: 10,
+  pageSizeOptions: [10, 20, 50, 100],
   showTotal: true,
-  showPageSize: true,
+  showJumper: true,
+  onChange: (page: number, pageSize: number) => {
+    pagination.current = page;
+    pagination.pageSize = pageSize;
+  },
 });
 
 const columns = [
@@ -156,6 +163,16 @@ const filteredHistoryList = computed(() => {
   }
 
   return result;
+});
+
+// 分页后的数据
+const paginatedHistoryList = computed(() => {
+  const filtered = filteredHistoryList.value;
+  const current = pagination.current;
+  const pageSize = pagination.pageSize;
+  const start = (current - 1) * pageSize;
+  const end = start + pageSize;
+  return filtered.slice(start, end);
 });
 
 const formatDate = (dateString: string) => {
